@@ -30,16 +30,9 @@ def setup_dirs():
 
 
 def run_migrations(app):
-    """Apply any pending DB migrations (safe to run on every startup)."""
-    try:
-        from flask_migrate import upgrade
-        with app.app_context():
-            upgrade()
-    except Exception as e:
-        # If migrations fail (e.g. fresh DB), fall back to create_all
-        print(f"Migration warning: {e} — using create_all fallback")
-        with app.app_context():
-            db.create_all()
+    """Create all DB tables. For packaged app, create_all is sufficient."""
+    with app.app_context():
+        db.create_all()
 
 
 def import_game_data(app):
