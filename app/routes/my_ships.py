@@ -12,7 +12,8 @@ def get_power_stats(my_ship):
     power_stats = {
         "total_generation": ship.power_generation_pips or 0,
         "systems": {},
-        "coolers": []
+        "coolers": [],
+        "power_plants": [],
     }
 
     # Collect equipped components by slot type (not component_type, which may differ)
@@ -38,6 +39,10 @@ def get_power_stats(my_ship):
         power_stats["total_generation"] = float(sum(
             (p.stats or {}).get("power_generation") or 0 for p in equipped_plants
         ))
+    power_stats["power_plants"] = [
+        {"name": p.name, "pips": (p.stats or {}).get("power_generation") or 0}
+        for p in equipped_plants
+    ]
 
     segs = ship.power_segments or {}
 
