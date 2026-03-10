@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}{{ ship.manufacturer }} {{ ship.name }} — SCCT{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{{ url_for('browser.ships') }}">Ship Browser</a></li>
+    <li class="breadcrumb-item active">{{ ship.name }}</li>
+  </ol>
+</nav>
+
+<div class="d-flex align-items-start mb-4 gap-3 flex-wrap">
+  <div class="me-auto">
+    <h1 class="h3 mb-1">{{ ship.name }}</h1>
+    <span class="text-muted">{{ ship.manufacturer or 'Unknown manufacturer' }}</span>
+  </div>
+  <form action="{{ url_for('my_ships.add', ship_id=ship.id) }}" method="post">
+    <button class="btn btn-warning">
+      <i class="bi bi-plus-circle me-1"></i>Add to My Fleet
+    </button>
+  </form>
+</div>
+
+<!-- Ship stats row -->
+<div class="row g-3 mb-4">
+  <div class="col-auto">
+    <div class="card px-3 py-2 text-center border-secondary">
+      <div class="text-muted small">Size</div>
+      <div class="fw-semibold text-capitalize">{{ ship.size_category or '—' }}</div>
+    </div>
+  </div>
+  <div class="col-auto">
+    <div class="card px-3 py-2 text-center border-secondary">
+      <div class="text-muted small">Crew</div>
+      <div class="fw-semibold">{{ ship.crew_size or '—' }}</div>
+    </div>
+  </div>
+  <div class="col-auto">
+    <div class="card px-3 py-2 text-center border-secondary">
+      <div class="text-muted small">Cargo (SCU)</div>
+      <div class="fw-semibold">{{ ship.cargo_scu or '—' }}</div>
+    </div>
+  </div>
+</div>
+
+<!-- Default loadout -->
+<h2 class="h5 mb-3"><i class="bi bi-grid-3x3-gap-fill text-warning me-2"></i>Default Loadout</h2>
+
+{% if slots %}
+  {% set ns = namespace(current_type=None) %}
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead class="table-dark">
+        <tr>
+          <th>Slot Type</th>
+          <th>#</th>
+          <th>Size</th>
+          <th>Default Component / Weapon</th>
+          <th>Grade</th>
+          <th>Class</th>
+          <th>Manufacturer</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for slot in slots %}
+          {% set item = slot.default_component or slot.default_weapon %}
+          <tr>
+            <td class="text-capitalize fw-semibold">
+              {{ slot.slot_type.replace('_', ' ') }}
+            </td>
+            <td class="text-muted">{{ slot.slot_number }}</td>
+            <td><span class="badge bg-dark border">S{{ slot.slot_size }}</span></td>
+            <td>
+              {% if slot.default_component %}
+                <span class="text-info">{{ slot.default_component.name }}</span>
+              {% elif slot.default_weapon %}
+                <span class="text-warning">{{ slot.default_weapon.name }}</span>
+              {% else %}
+                <span class="text-muted fst-italic">Empty</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if slot.default_component and slot.default_component.grade %}
+                <span class="badge bg-secondary">{{ slot.default_component.grade }}</span>
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+            <td class="small text-muted">
+              {% if slot.default_component %}
+                {{ slot.default_component.class_ or '—' }}
+              {% else %}
+                —
+              {% endif %}
+            </td>
+            <td class="small text-muted">
+              {% if slot.default_component %}
+                {{ slot.default_component.manufacturer or '—' }}
+              {% elif slot.default_weapon %}
+                {{ slot.default_weapon.manufacturer or '—' }}
+              {% else %}
+                —
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% else %}
+  <p class="text-muted fst-italic">No loadout data available for this ship.</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,637 @@
+{% extends "base.html" %}
+{% block title %}In Storage — SCCT{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center mb-4">
+  <h1 class="h3 mb-0 me-auto">
+    <i class="bi bi-box-seam-fill text-info me-2"></i>In Storage
+  </h1>
+  <button class="btn btn-info btn-sm me-2" data-bs-toggle="modal" data-bs-target="#addComponentModal">
+    <i class="bi bi-plus-circle me-1"></i>Add Component
+  </button>
+  <button class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#addWeaponModal">
+    <i class="bi bi-plus-circle me-1"></i>Add Weapon
+  </button>
+</div>
+
+<ul class="nav nav-tabs mb-4" id="invTabs" role="tablist">
+  <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-power-plants">
+    Power Plants ({{ components_by_type['power_plant']|length }})
+  </button></li>
+  <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-coolers">
+    Coolers ({{ components_by_type['cooler']|length }})
+  </button></li>
+  <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-shields">
+    Shields ({{ components_by_type['shield_generator']|length }})
+  </button></li>
+  <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-quantum-drives">
+    Quantum Drives ({{ components_by_type['quantum_drive']|length }})
+  </button></li>
+  <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-weapons">
+    Weapons ({{ weapons|length }})
+  </button></li>
+</ul>
+
+<div class="tab-content">
+  <!-- Power Plants tab -->
+  <div class="tab-pane fade show active" id="tab-power-plants">
+    {% set comp_list = components_by_type['power_plant'] %}
+    {% if comp_list %}
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead class="table-dark">
+          <tr>
+            <th class="sortable-header" data-sort="name" style="cursor:pointer">Name <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
+            <th class="sortable-header" data-sort="size" style="cursor:pointer">Size <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
+            <th class="sortable-header" data-sort="grade" style="cursor:pointer">Grade <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
+            <th class="sortable-header" data-sort="class" style="cursor:pointer">Class <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
+            <th class="sortable-header" data-sort="qty" style="cursor:pointer">Qty <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
+            <th>On Ship</th>
+            <th class="sortable-header" data-sort="notes" style="cursor:pointer">Notes <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in comp_list %}
+          <form id="upd-c-{{ item.id }}" action="{{ url_for('in_storage.update', item_id=item.id) }}" method="post"></form>
+          <tr>
+            <td class="fw-semibold">{{ item.component.name }}</td>
+            <td><span class="badge bg-dark border">S{{ item.component.size }}</span></td>
+            <td><span class="badge badge-grade-{{ item.component.grade }}">{{ item.component.grade }}</span></td>
+            <td class="small class-{{ (item.component.class_ or '')|lower }}">{{ item.component.class_ or '—' }}</td>
+            <td>
+              <input form="upd-c-{{ item.id }}" type="number" name="quantity"
+                     value="{{ item.quantity }}" min="1"
+                     class="form-control form-control-sm" style="width:65px"
+                     onblur="this.form.submit()">
+            </td>
+            <td class="small">
+              {% set ships = comp_on_ship.get(item.component_id, []) %}
+              {% if ships %}
+                <span class="text-warning">{{ ships|join(', ') }}</span>
+              {% else %}
+                <span class="text-muted">storage</span>
+              {% endif %}
+            </td>
+            <td class="small text-muted">{{ item.notes or '' }}
+              <input form="upd-c-{{ item.id }}" type="hidden" name="notes" value="{{ item.notes or '' }}">
+            </td>
+            <td class="text-end text-nowrap">
+              <form action="{{ url_for('in_storage.delete', item_id=item.id) }}" method="post" class="d-inline"
+                    onsubmit="return confirm('Remove this item?')">
+                <button class="btn btn-outline-danger btn-sm"><i class="bi bi-trash"></i></button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="text-center py-5 text-muted">
+      <i class="bi bi-cpu-fill fs-1 d-block mb-3 opacity-25"></i>
+      <p>No power plants in inventory.</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Coolers tab -->
+  <div class="tab-pane fade" id="tab-coolers">
+    {% set comp_list = components_by_type['cooler'] %}
+    {% if comp_list %}
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead class="table-dark">
+          <tr>
+            <th class="sortable-header" data-sort="name" style="cursor:pointer">Name <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
+            <th class="sortable-header" data-sort="size" style="cursor:pointer">Size <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
+            <th class="sortable-header" data-sort="grade" style="cursor:pointer">Grade <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
+            <th class="sortable-header" data-sort="class" style="cursor:pointer">Class <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
+            <th class="sortable-header" data-sort="qty" style="cursor:pointer">Qty <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
+            <th>On Ship</th>
+            <th class="sortable-header" data-sort="notes" style="cursor:pointer">Notes <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in comp_list %}
+          <form id="upd-c-{{ item.id }}" action="{{ url_for('in_storage.update', item_id=item.id) }}" method="post"></form>
+          <tr>
+            <td class="fw-semibold">{{ item.component.name }}</td>
+            <td><span class="badge bg-dark border">S{{ item.component.size }}</span></td>
+            <td><span class="badge badge-grade-{{ item.component.grade }}">{{ item.component.grade }}</span></td>
+            <td class="small class-{{ (item.component.class_ or '')|lower }}">{{ item.component.class_ or '—' }}</td>
+            <td>
+              <input form="upd-c-{{ item.id }}" type="number" name="quantity"
+                     value="{{ item.quantity }}" min="1"
+                     class="form-control form-control-sm" style="width:65px"
+                     onblur="this.form.submit()">
+            </td>
+            <td class="small">
+              {% set ships = comp_on_ship.get(item.component_id, []) %}
+              {% if ships %}
+                <span class="text-warning">{{ ships|join(', ') }}</span>
+              {% else %}
+                <span class="text-muted">storage</span>
+              {% endif %}
+            </td>
+            <td class="small text-muted">{{ item.notes or '' }}
+              <input form="upd-c-{{ item.id }}" type="hidden" name="notes" value="{{ item.notes or '' }}">
+            </td>
+            <td class="text-end text-nowrap">
+              <form action="{{ url_for('in_storage.delete', item_id=item.id) }}" method="post" class="d-inline"
+                    onsubmit="return confirm('Remove this item?')">
+                <button class="btn btn-outline-danger btn-sm"><i class="bi bi-trash"></i></button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="text-center py-5 text-muted">
+      <i class="bi bi-wind fs-1 d-block mb-3 opacity-25"></i>
+      <p>No coolers in inventory.</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Shields tab -->
+  <div class="tab-pane fade" id="tab-shields">
+    {% set comp_list = components_by_type['shield_generator'] %}
+    {% if comp_list %}
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead class="table-dark">
+          <tr>
+            <th class="sortable-header" data-sort="name" style="cursor:pointer">Name <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
+            <th class="sortable-header" data-sort="size" style="cursor:pointer">Size <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
+            <th class="sortable-header" data-sort="grade" style="cursor:pointer">Grade <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
+            <th class="sortable-header" data-sort="class" style="cursor:pointer">Class <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
+            <th class="sortable-header" data-sort="qty" style="cursor:pointer">Qty <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
+            <th>On Ship</th>
+            <th class="sortable-header" data-sort="notes" style="cursor:pointer">Notes <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in comp_list %}
+          <form id="upd-c-{{ item.id }}" action="{{ url_for('in_storage.update', item_id=item.id) }}" method="post"></form>
+          <tr>
+            <td class="fw-semibold">{{ item.component.name }}</td>
+            <td><span class="badge bg-dark border">S{{ item.component.size }}</span></td>
+            <td><span class="badge badge-grade-{{ item.component.grade }}">{{ item.component.grade }}</span></td>
+            <td class="small class-{{ (item.component.class_ or '')|lower }}">{{ item.component.class_ or '—' }}</td>
+            <td>
+              <input form="upd-c-{{ item.id }}" type="number" name="quantity"
+                     value="{{ item.quantity }}" min="1"
+                     class="form-control form-control-sm" style="width:65px"
+                     onblur="this.form.submit()">
+            </td>
+            <td class="small">
+              {% set ships = comp_on_ship.get(item.component_id, []) %}
+              {% if ships %}
+                <span class="text-warning">{{ ships|join(', ') }}</span>
+              {% else %}
+                <span class="text-muted">storage</span>
+              {% endif %}
+            </td>
+            <td class="small text-muted">{{ item.notes or '' }}
+              <input form="upd-c-{{ item.id }}" type="hidden" name="notes" value="{{ item.notes or '' }}">
+            </td>
+            <td class="text-end text-nowrap">
+              <form action="{{ url_for('in_storage.delete', item_id=item.id) }}" method="post" class="d-inline"
+                    onsubmit="return confirm('Remove this item?')">
+                <button class="btn btn-outline-danger btn-sm"><i class="bi bi-trash"></i></button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="text-center py-5 text-muted">
+      <i class="bi bi-shield-check fs-1 d-block mb-3 opacity-25"></i>
+      <p>No shields in inventory.</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Quantum Drives tab -->
+  <div class="tab-pane fade" id="tab-quantum-drives">
+    {% set comp_list = components_by_type['quantum_drive'] %}
+    {% if comp_list %}
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead class="table-dark">
+          <tr>
+            <th class="sortable-header" data-sort="name" style="cursor:pointer">Name <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
+            <th class="sortable-header" data-sort="size" style="cursor:pointer">Size <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
+            <th class="sortable-header" data-sort="grade" style="cursor:pointer">Grade <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
+            <th class="sortable-header" data-sort="class" style="cursor:pointer">Class <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
+            <th class="sortable-header" data-sort="qty" style="cursor:pointer">Qty <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
+            <th>On Ship</th>
+            <th class="sortable-header" data-sort="notes" style="cursor:pointer">Notes <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in comp_list %}
+          <form id="upd-c-{{ item.id }}" action="{{ url_for('in_storage.update', item_id=item.id) }}" method="post"></form>
+          <tr>
+            <td class="fw-semibold">{{ item.component.name }}</td>
+            <td><span class="badge bg-dark border">S{{ item.component.size }}</span></td>
+            <td><span class="badge badge-grade-{{ item.component.grade }}">{{ item.component.grade }}</span></td>
+            <td class="small class-{{ (item.component.class_ or '')|lower }}">{{ item.component.class_ or '—' }}</td>
+            <td>
+              <input form="upd-c-{{ item.id }}" type="number" name="quantity"
+                     value="{{ item.quantity }}" min="1"
+                     class="form-control form-control-sm" style="width:65px"
+                     onblur="this.form.submit()">
+            </td>
+            <td class="small">
+              {% set ships = comp_on_ship.get(item.component_id, []) %}
+              {% if ships %}
+                <span class="text-warning">{{ ships|join(', ') }}</span>
+              {% else %}
+                <span class="text-muted">storage</span>
+              {% endif %}
+            </td>
+            <td class="small text-muted">{{ item.notes or '' }}
+              <input form="upd-c-{{ item.id }}" type="hidden" name="notes" value="{{ item.notes or '' }}">
+            </td>
+            <td class="text-end text-nowrap">
+              <form action="{{ url_for('in_storage.delete', item_id=item.id) }}" method="post" class="d-inline"
+                    onsubmit="return confirm('Remove this item?')">
+                <button class="btn btn-outline-danger btn-sm"><i class="bi bi-trash"></i></button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="text-center py-5 text-muted">
+      <i class="bi bi-lightning fs-1 d-block mb-3 opacity-25"></i>
+      <p>No quantum drives in inventory.</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Weapons tab -->
+  <div class="tab-pane fade" id="tab-weapons">
+    {% if weapons %}
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead class="table-dark">
+          <tr>
+            <th class="sortable-header" data-sort="name" style="cursor:pointer">Name <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
+            <th class="sortable-header" data-sort="type" style="cursor:pointer">Type <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
+            <th class="sortable-header" data-sort="size" style="cursor:pointer">Size <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
+            <th class="sortable-header" data-sort="qty" style="cursor:pointer">Qty <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
+            <th class="sortable-header" data-sort="location" style="cursor:pointer">Location <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
+            <th>On Ship</th>
+            <th class="sortable-header" data-sort="notes" style="cursor:pointer">Notes <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in weapons %}
+          <form id="upd-w-{{ item.id }}" action="{{ url_for('in_storage.update', item_id=item.id) }}" method="post"></form>
+          <tr>
+            <td class="fw-semibold">{{ item.weapon.name }}</td>
+            <td class="text-muted small text-capitalize">{{ item.weapon.weapon_type.replace('_',' ') }}</td>
+            <td><span class="badge bg-dark border">S{{ item.weapon.size }}</span></td>
+            <td>
+              <input form="upd-w-{{ item.id }}" type="number" name="quantity"
+                     value="{{ item.quantity }}" min="1"
+                     class="form-control form-control-sm" style="width:65px"
+                     onblur="this.form.submit()">
+            </td>
+            <td>
+              <input form="upd-w-{{ item.id }}" type="text" name="location"
+                     value="{{ item.location }}"
+                     class="form-control form-control-sm" style="width:100px" placeholder="location">
+              <input form="upd-w-{{ item.id }}" type="hidden" name="notes" value="{{ item.notes or '' }}">
+            </td>
+            <td class="small">
+              {% set ships = weap_on_ship.get(item.weapon_id, []) %}
+              {% if ships %}
+                <span class="text-warning">{{ ships|join(', ') }}</span>
+              {% else %}
+                <span class="text-muted">storage</span>
+              {% endif %}
+            </td>
+            <td class="small text-muted">{{ item.notes or '' }}</td>
+            <td class="text-end text-nowrap">
+              <form action="{{ url_for('in_storage.delete', item_id=item.id) }}" method="post" class="d-inline"
+                    onsubmit="return confirm('Remove this item?')">
+                <button class="btn btn-outline-danger btn-sm"><i class="bi bi-trash"></i></button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="text-center py-5 text-muted">
+      <i class="bi bi-crosshair fs-1 d-block mb-3 opacity-25"></i>
+      <p>No weapons in inventory.</p>
+      <button class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#addWeaponModal">
+        Add your first weapon
+      </button>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Add Component Modal -->
+<div class="modal fade" id="addComponentModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-cpu-fill me-2"></i>Add Component</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form action="{{ url_for('in_storage.add') }}" method="post">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Search by name</label>
+            <input type="text" id="comp-search" class="form-control" placeholder="Type part of name">
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col">
+              <label class="form-label">Type</label>
+              <select id="comp-filter-type" class="form-select">
+                <option value="">Any</option>
+                {% for t in comp_types %}
+                <option value="{{t}}">{{t.replace('_',' ')|capitalize}}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col">
+              <label class="form-label">Size</label>
+              <select id="comp-filter-size" class="form-select">
+                <option value="">Any</option>
+                {% for s in comp_sizes %}
+                <option value="{{s}}">S{{s}}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col">
+              <label class="form-label">Grade</label>
+              <select id="comp-filter-grade" class="form-select">
+                <option value="">Any</option>
+                {% for g in comp_grades %}
+                <option value="{{g}}">{{g}}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col">
+              <label class="form-label">Class</label>
+              <select id="comp-filter-class" class="form-select">
+                <option value="">Any</option>
+                {% for c in comp_classes %}
+                <option value="{{c}}">{{c}}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Component</label>
+            <select name="component_id" class="form-select" required>
+              <option value="">— select —</option>
+              {% set ns = namespace(current_type=None) %}
+              {% for c in all_components %}
+                {% if c.component_type != ns.current_type %}
+                  {% if ns.current_type is not none %}</optgroup>{% endif %}
+                  <optgroup label="{{ c.component_type.replace('_',' ')|capitalize }}">
+                  {% set ns.current_type = c.component_type %}
+                {% endif %}
+                <option value="{{ c.id }}" data-name="{{ c.name }}" data-type="{{ c.component_type }}" data-size="{{ c.size }}" data-grade="{{ c.grade or '' }}" data-class="{{ c.class_ or '' }}">
+                  {{ c.name }} — S{{ c.size }} {{ c.grade or '' }} {{ c.class_ or '' }}
+                </option>
+              {% endfor %}
+              {% if ns.current_type is not none %}</optgroup>{% endif %}
+            </select>
+          </div>
+          <div class="row g-2">
+            <div class="col-4">
+              <label class="form-label">Qty</label>
+              <input type="number" name="quantity" value="1" min="1" class="form-control">
+            </div>
+            <div class="col-8">
+              <label class="form-label">Location</label>
+              <input type="text" name="location" value="storage" class="form-control" placeholder="storage, ship name, etc.">
+            </div>
+          </div>
+          <div class="mt-2">
+            <label class="form-label">Notes</label>
+            <input type="text" name="notes" class="form-control" placeholder="optional">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-info">Add to Inventory</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Add Weapon Modal -->
+<div class="modal fade" id="addWeaponModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-crosshair me-2"></i>Add Weapon</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form action="{{ url_for('in_storage.add') }}" method="post">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Weapon</label>
+            <select name="weapon_id" class="form-select" required>
+              <option value="">— select —</option>
+              {% set ns2 = namespace(current_type=None) %}
+              {% for w in all_weapons %}
+                {% if w.weapon_type != ns2.current_type %}
+                  {% if ns2.current_type is not none %}</optgroup>{% endif %}
+                  <optgroup label="{{ (w.weapon_type or 'other')|capitalize }}">
+                  {% set ns2.current_type = w.weapon_type %}
+                {% endif %}
+                <option value="{{ w.id }}">
+                  {{ w.name }} — S{{ w.size }} {{ w.mount_type or '' }}
+                </option>
+              {% endfor %}
+              {% if ns2.current_type is not none %}</optgroup>{% endif %}
+            </select>
+          </div>
+          <div class="row g-2">
+            <div class="col-4">
+              <label class="form-label">Qty</label>
+              <input type="number" name="quantity" value="1" min="1" class="form-control">
+            </div>
+            <div class="col-8">
+              <label class="form-label">Location</label>
+              <input type="text" name="location" value="storage" class="form-control" placeholder="storage, ship name, etc.">
+            </div>
+          </div>
+          <div class="mt-2">
+            <label class="form-label">Notes</label>
+            <input type="text" name="notes" class="form-control" placeholder="optional">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-info">Add to Inventory</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Remember active inventory tab across page reloads/redirects
+const TAB_KEY = "inv-active-tab";
+const tabs = document.querySelectorAll("#invTabs button[data-bs-toggle='tab']");
+const saved = localStorage.getItem(TAB_KEY);
+if (saved) {
+  const btn = document.querySelector(`#invTabs button[data-bs-target="${saved}"]`);
+  if (btn) bootstrap.Tab.getOrCreateInstance(btn).show();
+}
+tabs.forEach(btn => btn.addEventListener("shown.bs.tab", e => {
+  localStorage.setItem(TAB_KEY, e.target.dataset.bsTarget);
+}));
+
+// component search/filter helpers
+function _filterCompOptions() {
+  const search = document.getElementById('comp-search').value.toLowerCase();
+  const type = document.getElementById('comp-filter-type').value;
+  const size = document.getElementById('comp-filter-size').value;
+  const grade = document.getElementById('comp-filter-grade').value;
+  const klass = document.getElementById('comp-filter-class').value;
+  const select = document.querySelector('#addComponentModal select[name="component_id"]');
+  Array.from(select.options).forEach(opt => {
+    if (!opt.value) return;
+    let name = (opt.dataset.name || '').toLowerCase();
+    let t = opt.dataset.type || '';
+    let s = opt.dataset.size || '';
+    let g = opt.dataset.grade || '';
+    let c = opt.dataset.class || '';
+    let visible = true;
+    if (search && !name.includes(search)) visible = false;
+    if (type && t !== type) visible = false;
+    if (size && s !== size) visible = false;
+    if (grade && g !== grade) visible = false;
+    if (klass && c !== klass) visible = false;
+    opt.style.display = visible ? '' : 'none';
+  });
+}
+document.addEventListener('DOMContentLoaded', () => {
+  ['comp-search','comp-filter-type','comp-filter-size','comp-filter-grade','comp-filter-class'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', _filterCompOptions);
+  });
+  // when modal opens, clear filters and run once
+  const addModal = document.getElementById('addComponentModal');
+  addModal.addEventListener('show.bs.modal', () => {
+    document.getElementById('comp-search').value = '';
+    ['comp-filter-type','comp-filter-size','comp-filter-grade','comp-filter-class'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    _filterCompOptions();
+  });
+
+  // Table sorting functionality
+  const sortState = {}; // track sort direction per table
+  document.querySelectorAll('.sortable-header').forEach(header => {
+    header.addEventListener('click', function() {
+      const table = this.closest('table');
+      const tbody = table.querySelector('tbody');
+      const sortField = this.dataset.sort;
+      const isAsc = sortState[table.id] && sortState[table.id].field === sortField && sortState[table.id].asc;
+      
+      // Get all rows
+      const rows = Array.from(tbody.querySelectorAll('tr'));
+      
+      // Sort rows
+      rows.sort((a, b) => {
+        let aVal, bVal;
+        
+        // Extract sort values based on field
+        switch(sortField) {
+          case 'name':
+            aVal = a.querySelector('.fw-semibold')?.textContent?.toLowerCase() || '';
+            bVal = b.querySelector('.fw-semibold')?.textContent?.toLowerCase() || '';
+            break;
+          case 'size':
+            aVal = parseInt(a.cells[1]?.textContent?.match(/\d+/)?.[0] || 0);
+            bVal = parseInt(b.cells[1]?.textContent?.match(/\d+/)?.[0] || 0);
+            break;
+          case 'grade':
+            aVal = a.cells[2]?.textContent?.trim() || '';
+            bVal = b.cells[2]?.textContent?.trim() || '';
+            break;
+          case 'class':
+            aVal = a.cells[3]?.textContent?.trim() || '';
+            bVal = b.cells[3]?.textContent?.trim() || '';
+            break;
+          case 'type':
+            aVal = a.cells[1]?.textContent?.toLowerCase().trim() || '';
+            bVal = b.cells[1]?.textContent?.toLowerCase().trim() || '';
+            break;
+          case 'qty':
+            aVal = parseInt(a.querySelector('input[name="quantity"]')?.value || 0);
+            bVal = parseInt(b.querySelector('input[name="quantity"]')?.value || 0);
+            break;
+          case 'location':
+            aVal = a.querySelector('input[name="location"]')?.value?.toLowerCase() || '';
+            bVal = b.querySelector('input[name="location"]')?.value?.toLowerCase() || '';
+            break;
+          case 'notes':
+            aVal = (a.querySelector('input[name="notes"]')?.value || a.cells[a.cells.length-3]?.textContent)?.toLowerCase() || '';
+            bVal = (b.querySelector('input[name="notes"]')?.value || b.cells[b.cells.length-3]?.textContent)?.toLowerCase() || '';
+            break;
+          default:
+            return 0;
+        }
+        
+        // Compare values
+        if (typeof aVal === 'string') {
+          return isAsc ? bVal.localeCompare(aVal) : aVal.localeCompare(bVal);
+        } else {
+          return isAsc ? bVal - aVal : aVal - bVal;
+        }
+      });
+      
+      // Re-insert sorted rows
+      rows.forEach(row => tbody.appendChild(row));
+      
+      // Update sort state
+      table.id = table.id || 'table-' + Math.random().toString(36).substr(2, 9);
+      sortState[table.id] = { field: sortField, asc: !isAsc };
+      
+      // Update visual indicators
+      table.querySelectorAll('.sortable-header i').forEach(icon => {
+        icon.style.opacity = '0.5';
+        icon.classList.remove('bi-arrow-down', 'bi-arrow-up');
+        icon.classList.add('bi-arrow-down-up');
+      });
+      const currentIcon = this.querySelector('i');
+      currentIcon.style.opacity = '1';
+      currentIcon.classList.remove('bi-arrow-down-up');
+      currentIcon.classList.add(isAsc ? 'bi-arrow-up' : 'bi-arrow-down');
+    });
+  });
+});
+
+</script>
+{% endblock %}

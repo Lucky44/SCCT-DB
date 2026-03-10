@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}My Hangar — SCCT{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center mb-4 gap-2">
+  <h1 class="h3 mb-0 me-3">
+    <i class="bi bi-collection-fill text-warning me-2"></i>My Hangar
+  </h1>
+  <a href="{{ url_for('browser.ships') }}" class="btn btn-warning btn-sm">
+    <i class="bi bi-plus-circle me-1"></i> Add Ship
+  </a>
+  {% if ships %}
+  <button id="removeShipToggle" class="btn btn-remove-ship btn-sm">
+    <i class="bi bi-dash-circle me-1"></i> Remove Ship
+  </button>
+  {% endif %}
+</div>
+
+{% if ships %}
+<div id="hangarGrid" class="row g-3 row-cols-xl-4 row-cols-lg-3 row-cols-sm-2 row-cols-1">
+  {% for my_ship in ships %}
+  <div class="col" data-ship-id="{{ my_ship.id }}">
+    <div class="card hangar-card position-relative" style="cursor: pointer;"
+         onclick="if(event.target.closest('.hangar-delete-overlay') === null) window.location.href='{{ url_for('my_ships.detail', my_ship_id=my_ship.id) }}'">
+      <div class="d-flex h-100">
+        <!-- Left: text -->
+        <div class="hangar-card-body px-3 py-2 flex-grow-1 overflow-hidden">
+          <div class="fw-bold fs-4 text-truncate">{{ my_ship.ship.name | ship_model }}</div>
+          <div class="text-muted small text-truncate">{{ my_ship.ship.manufacturer or '' }}</div>
+          {% if my_ship.nickname %}
+            <div class="text-warning small text-truncate">"{{ my_ship.nickname }}"</div>
+          {% endif %}
+          <div class="mt-2 d-flex flex-wrap gap-1">
+            <span class="badge bg-secondary">{{ my_ship.ship.size_category or '—' }}</span>
+            {% if my_ship.ship.crew_size %}
+              <span class="badge bg-dark border text-muted">
+                <i class="bi bi-people-fill me-1"></i>{{ my_ship.ship.crew_size }}
+              </span>
+            {% endif %}
+            {% if my_ship.ship.cargo_scu %}
+              <span class="badge bg-dark border text-muted">
+                <i class="bi bi-box-seam me-1"></i>{{ my_ship.ship.cargo_scu }}
+              </span>
+            {% endif %}
+          </div>
+        </div>
+        <!-- Right: image -->
+        <div class="hangar-card-img-wrap flex-shrink-0">
+          {% if my_ship.ship.image_path %}
+            <img src="{{ url_for('static', filename=my_ship.ship.image_path) }}"
+                 class="hangar-card-img" alt="{{ my_ship.ship.name | ship_model }}">
+          {% else %}
+            <div class="hangar-card-img d-flex align-items-center justify-content-center text-muted">
+              <i class="bi bi-rocket opacity-25"></i>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+      <!-- Delete overlay (shown in delete mode) -->
+      <div class="hangar-delete-overlay">
+        <form action="{{ url_for('my_ships.delete', my_ship_id=my_ship.id) }}" method="post"
+              onsubmit="return confirm('Delete {{ (my_ship.nickname or (my_ship.ship.name | ship_model)) | replace("'", "\\'") }} from hangar?')">
+          <button type="submit" class="btn btn-danger btn-sm">Delete?</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="text-center py-5 text-muted">
+  <i class="bi bi-rocket fs-1 d-block mb-3 opacity-25"></i>
+  <p>Your hangar is empty.</p>
+  <a href="{{ url_for('browser.ships') }}" class="btn btn-warning">Browse ships to add one</a>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+<script>
+  const grid = document.getElementById("hangarGrid");
+  const removeBtn = document.getElementById("removeShipToggle");
+
+  if (grid) {
+    Sortable.create(grid, {
+      animation: 150,
+      ghostClass: "opacity-25",
+      onEnd() {
+        const order = [...grid.querySelectorAll("[data-ship-id]")]
+          .map(el => parseInt(el.dataset.shipId));
+        fetch("/api/hangar/reorder", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ order })
+        });
+      }
+    });
+  }
+
+  if (removeBtn) {
+    removeBtn.addEventListener("click", () => {
+      const active = grid.classList.toggle("delete-mode");
+      removeBtn.classList.toggle("active", active);
+      removeBtn.innerHTML = active
+        ? '<i class="bi bi-x-circle me-1"></i> Cancel'
+        : '<i class="bi bi-dash-circle me-1"></i> Remove Ship';
+    });
+  }
+</script>
+{% endblock %}

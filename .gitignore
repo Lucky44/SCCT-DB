@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+
+# Virtualenv
+venv/
+.env
+.venv
+
+# Flask / SQLite
+instance/
+*.db
+*.sqlite3
+
+# Migrations (keep folder but not compiled)
+# migrations/versions/*.pyc  <- handled by __pycache__ above
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log

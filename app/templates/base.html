@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}SC Component Tracker{% endblock %}</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom border-secondary">
+  <div class="container-fluid">
+    <a class="navbar-brand fw-bold" href="{{ url_for('dashboard.index') }}">
+      <i class="bi bi-rocket-takeoff-fill text-warning me-1"></i> SCCT
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMain">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navMain">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint and request.endpoint.startswith('dashboard') %}active{% endif %}"
+             href="{{ url_for('dashboard.index') }}">
+            <i class="bi bi-speedometer2"></i> Dashboard
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint and request.endpoint.startswith('my_ships') %}active{% endif %}"
+             href="{{ url_for('my_ships.index') }}">
+            <i class="bi bi-collection-fill"></i> My Hangar
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint and request.endpoint.startswith('in_storage') %}active{% endif %}"
+             href="{{ url_for('in_storage.index') }}">
+            <i class="bi bi-box-seam-fill"></i> In Storage
+          </a>
+        </li>
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle {% if request.endpoint and request.endpoint.startswith('browser') %}active{% endif %}"
+             href="#" role="button" data-bs-toggle="dropdown">
+            <i class="bi bi-database-fill-gear"></i> Browse Data
+          </a>
+          <ul class="dropdown-menu dropdown-menu-dark">
+            <li><a class="dropdown-item" href="{{ url_for('browser.ships') }}">
+              <i class="bi bi-rocket-fill me-1"></i> Ships
+            </a></li>
+            <li><a class="dropdown-item" href="{{ url_for('browser.components') }}">
+              <i class="bi bi-cpu-fill me-1"></i> Components
+            </a></li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div class="container-fluid py-4 px-4">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  {% block content %}{% endblock %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

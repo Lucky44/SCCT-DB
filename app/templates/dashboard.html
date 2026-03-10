@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — SCCT{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center mb-4">
+  <h1 class="h3 mb-0 me-auto">
+    <i class="bi bi-speedometer2 text-warning me-2"></i>Dashboard
+  </h1>
+  <form action="{{ url_for('dashboard.update_game_data') }}" method="post"
+        onsubmit="return confirm('Re-import all game data? This will clear and repopulate ships, components and weapons. Your fleet and inventory are not affected.')">
+    <button class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-repeat me-1"></i>Update Game Data
+    </button>
+  </form>
+</div>
+
+<div class="row g-4 mb-5">
+  <!-- My Fleet -->
+  <div class="col-sm-6 col-xl-3">
+    <div class="card border-warning h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="text-muted small text-uppercase fw-semibold mb-1">My Hangar</div>
+            <div class="display-5 fw-bold">{{ stats.my_ship_count }}</div>
+          </div>
+          <i class="bi bi-collection-fill fs-1 text-warning opacity-50"></i>
+        </div>
+      </div>
+      <div class="card-footer border-warning">
+        <a href="{{ url_for('my_ships.index') }}" class="text-warning text-decoration-none small">
+          Go to Hangar <i class="bi bi-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Items in Storage -->
+  <div class="col-sm-6 col-xl-3">
+    <div class="card border-info h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="text-muted small text-uppercase fw-semibold mb-1">Items in Storage</div>
+            <div class="display-5 fw-bold">{{ stats.my_inventory_count }}</div>
+          </div>
+          <i class="bi bi-box-seam-fill fs-1 text-info opacity-50"></i>
+        </div>
+      </div>
+      <div class="card-footer border-info">
+        <a href="{{ url_for('in_storage.index') }}" class="text-info text-decoration-none small">
+          View storage <i class="bi bi-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ships in Database -->
+  <div class="col-sm-6 col-xl-3">
+    <div class="card border-secondary h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="text-muted small text-uppercase fw-semibold mb-1">Ships in DB</div>
+            <div class="display-5 fw-bold">{{ stats.total_ships_ref }}</div>
+          </div>
+          <i class="bi bi-rocket-fill fs-1 text-secondary opacity-50"></i>
+        </div>
+      </div>
+      <div class="card-footer border-secondary">
+        <a href="{{ url_for('browser.ships') }}" class="text-secondary text-decoration-none small">
+          Browse ships <i class="bi bi-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Components in Database -->
+  <div class="col-sm-6 col-xl-3">
+    <div class="card border-secondary h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="text-muted small text-uppercase fw-semibold mb-1">Components in DB</div>
+            <div class="display-5 fw-bold">{{ stats.total_components_ref }}</div>
+          </div>
+          <i class="bi bi-cpu-fill fs-1 text-secondary opacity-50"></i>
+        </div>
+      </div>
+      <div class="card-footer border-secondary">
+        <a href="{{ url_for('browser.components') }}" class="text-secondary text-decoration-none small">
+          Browse components <i class="bi bi-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if stats.my_ship_count == 0 and stats.total_ships_ref == 0 %}
+<div class="alert alert-info d-flex align-items-center gap-3">
+  <i class="bi bi-info-circle-fill fs-4"></i>
+  <div>
+    <strong>No game data loaded yet.</strong>
+    Run <code>python scripts/import_scunpacked.py</code> to import ships and components from scunpacked-data.
+  </div>
+</div>
+{% elif stats.my_ship_count == 0 %}
+<div class="alert alert-warning d-flex align-items-center gap-3">
+  <i class="bi bi-exclamation-triangle-fill fs-4"></i>
+  <div>
+    <strong>Your fleet is empty.</strong>
+    <a href="{{ url_for('browser.ships') }}" class="alert-link">Browse ships</a> and add some to get started.
+  </div>
+</div>
+{% endif %}
+
+<div class="row g-4">
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header fw-semibold">
+        <i class="bi bi-lightning-fill text-warning me-1"></i> Quick Actions
+      </div>
+      <div class="card-body d-flex flex-column gap-2">
+        <a href="{{ url_for('browser.ships') }}" class="btn btn-outline-warning">
+          <i class="bi bi-plus-circle me-1"></i> Add a ship to your fleet
+        </a>
+        <a href="{{ url_for('in_storage.index') }}" class="btn btn-outline-info">
+          <i class="bi bi-plus-circle me-1"></i> Add items to storage
+        </a>
+        <a href="{{ url_for('browser.components') }}" class="btn btn-outline-secondary">
+          <i class="bi bi-search me-1"></i> Browse components
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header fw-semibold">
+        <i class="bi bi-database-fill me-1"></i> Reference Data
+      </div>
+      <div class="card-body">
+        <table class="table table-sm table-borderless mb-0">
+          <tbody>
+            <tr>
+              <td class="text-muted">Ships</td>
+              <td class="text-end fw-semibold">{{ stats.total_ships_ref }}</td>
+            </tr>
+            <tr>
+              <td class="text-muted">Components</td>
+              <td class="text-end fw-semibold">{{ stats.total_components_ref }}</td>
+            </tr>
+            <tr>
+              <td class="text-muted">Weapons</td>
+              <td class="text-end fw-semibold">{{ stats.total_weapons_ref }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

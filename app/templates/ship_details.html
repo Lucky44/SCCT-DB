@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}{{ my_ship.nickname or my_ship.ship.name }} — Details — SCCT{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb mb-0">
+    <li class="breadcrumb-item"><a href="{{ url_for('my_ships.index') }}">My Hangar</a></li>
+    <li class="breadcrumb-item"><a href="{{ url_for('my_ships.detail', my_ship_id=my_ship.id) }}">{{ my_ship.nickname or my_ship.ship.name }}</a></li>
+    <li class="breadcrumb-item active">Details</li>
+  </ol>
+</nav>
+
+<h1 class="h2 mb-0">
+  {{ my_ship.ship.name }}
+  {% if my_ship.nickname %}<span class="text-warning">"{{ my_ship.nickname }}"</span>{% endif %}
+</h1>
+<div class="text-muted mb-4">{{ my_ship.ship.manufacturer }}</div>
+
+<p class="text-muted fst-italic">Full ship details coming soon.</p>
+{% endblock %}

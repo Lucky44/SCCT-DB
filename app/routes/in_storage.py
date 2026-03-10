@@ -1,0 +1,139 @@
+from collections import defaultdict
+from flask import Blueprint, render_template, redirect, url_for, request, flash, abort
+from app import db
+from app.models import Component, Weapon, MyInventory, MyShipLoadout, MyShip
+
+in_storage_bp = Blueprint("in_storage", __name__, url_prefix="/in-storage")
+
+
+def _on_ship_maps():
+    """Return dicts mapping component_id/weapon_id → list of ship display names."""
+    comp_map = defaultdict(list)
+    weap_map = defaultdict(list)
+    rows = (
+        db.session.query(MyShipLoadout, MyShip)
+        .join(MyShip, MyShipLoadout.my_ship_id == MyShip.id)
+        .filter(
+            (MyShipLoadout.component_id.isnot(None)) |
+            (MyShipLoadout.weapon_id.isnot(None))
+        )
+        .all()
+    )
+    for slot, my_ship in rows:
+        label = my_ship.nickname or my_ship.ship.name
+        if slot.component_id:
+            comp_map[slot.component_id].append(label)
+        if slot.weapon_id:
+            weap_map[slot.weapon_id].append(label)
+    return comp_map, weap_map
+
+
+@in_storage_bp.route("/")
+def index():
+    # Get user's inventory components, grouped by type
+    all_user_components = (
+        db.session.query(MyInventory)
+        .filter(MyInventory.component_id.isnot(None))
+        .join(Component, MyInventory.component_id == Component.id)
+        .order_by(Component.component_type, Component.size)
+        .all()
+    )
+    
+    components_by_type = {
+        "power_plant": [],
+        "cooler": [],
+        "shield_generator": [],
+        "quantum_drive": [],
+    }
+    for comp in all_user_components:
+        comp_type = comp.component.component_type
+        if comp_type in components_by_type:
+            components_by_type[comp_type].append(comp)
+    
+    weapons = (
+        db.session.query(MyInventory)
+        .filter(MyInventory.weapon_id.isnot(None))
+        .join(Weapon, MyInventory.weapon_id == Weapon.id)
+        .order_by(Weapon.weapon_type, Weapon.size)
+        .all()
+    )
+
+    comp_on_ship, weap_on_ship = _on_ship_maps()
+
+    # All reference components/weapons for the add-item dropdowns, grouped by type
+    all_components = (
+        db.session.query(Component)
+        .order_by(Component.component_type, Component.size, Component.grade, Component.name)
+        .all()
+    )
+    all_weapons = (
+        db.session.query(Weapon)
+        .order_by(Weapon.weapon_type, Weapon.size, Weapon.name)
+        .all()
+    )
+
+    # prepare lists for filter dropdowns (unique and sorted)
+    comp_types = sorted({c.component_type for c in all_components if c.component_type})
+    comp_sizes = sorted({c.size for c in all_components if c.size is not None})
+    comp_grades = sorted({c.grade for c in all_components if c.grade})
+    comp_classes = sorted({c.class_ for c in all_components if c.class_})
+
+    return render_template(
+        "in_storage.html",
+        components_by_type=components_by_type,
+        weapons=weapons,
+        comp_on_ship=comp_on_ship,
+        weap_on_ship=weap_on_ship,
+        all_components=all_components,
+        all_weapons=all_weapons,
+        comp_types=comp_types,
+        comp_sizes=comp_sizes,
+        comp_grades=comp_grades,
+        comp_classes=comp_classes,
+    )
+
+
+@in_storage_bp.route("/add", methods=["POST"])
+def add():
+    component_id = request.form.get("component_id") or None
+    weapon_id = request.form.get("weapon_id") or None
+    quantity = int(request.form.get("quantity", 1))
+    location = request.form.get("location", "storage").strip()
+    notes = request.form.get("notes", "").strip() or None
+
+    if not component_id and not weapon_id:
+        flash("Select a component or weapon to add.", "warning")
+        return redirect(url_for("in_storage.index"))
+
+    entry = MyInventory(
+        component_id=int(component_id) if component_id else None,
+        weapon_id=int(weapon_id) if weapon_id else None,
+        quantity=quantity,
+        location=location,
+        notes=notes,
+    )
+    db.session.add(entry)
+    db.session.commit()
+    flash("Item added to inventory.", "success")
+    return redirect(url_for("in_storage.index"))
+
+
+@in_storage_bp.route("/<int:item_id>/update", methods=["POST"])
+def update(item_id):
+    item = db.session.get(MyInventory, item_id) or abort(404)
+    qty = request.form.get("quantity", "1")
+    item.quantity = max(1, int(qty)) if qty.isdigit() else 1
+    item.location = request.form.get("location", "storage").strip()
+    item.notes = request.form.get("notes", "").strip() or None
+    db.session.commit()
+    flash("Inventory updated.", "success")
+    return redirect(url_for("in_storage.index"))
+
+
+@in_storage_bp.route("/<int:item_id>/delete", methods=["POST"])
+def delete(item_id):
+    item = db.session.get(MyInventory, item_id) or abort(404)
+    db.session.delete(item)
+    db.session.commit()
+    flash("Item removed from inventory.", "info")
+    return redirect(url_for("in_storage.index"))

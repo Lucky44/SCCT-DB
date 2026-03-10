@@ -1,0 +1,166 @@
+/* SC Component Tracker — custom styles */
+
+body {
+  background-color: #0d1117;
+  color: #e6edf3;
+}
+
+.navbar-brand {
+  letter-spacing: 0.05em;
+}
+
+.card {
+  background-color: #161b22;
+  border-color: #30363d;
+}
+
+.card-header, .card-footer {
+  background-color: #0d1117;
+  border-color: #30363d;
+}
+
+.table {
+  --bs-table-bg: transparent;
+  --bs-table-hover-bg: rgba(255,255,255,0.04);
+  --bs-table-striped-bg: rgba(255,255,255,0.02);
+}
+
+.table-dark {
+  --bs-table-bg: #161b22;
+}
+
+/* Grade badge colors — A (best) → D (cheapest) */
+.badge-grade-A        { background-color: #1a7f37; color: #fff; }
+.badge-grade-B        { background-color: #2d6a9f; color: #fff; }
+.badge-grade-C        { background-color: #9e6a03; color: #fff; }
+.badge-grade-D        { background-color: #6e7681; color: #fff; }
+.badge-grade-Bespoke  { background-color: #6e40c9; color: #fff; }
+
+/* Class color coding (matching spreadsheet scheme) */
+.class-military    { color: #58a6ff; }
+.class-civilian    { color: #3fb950; }
+.class-industrial  { color: #d29922; }
+.class-stealth     { color: #bc8cff; }
+.class-competition { color: #ff7b72; }
+
+.modal-content {
+  background-color: #161b22;
+  border-color: #30363d;
+}
+
+/* Power allocation graph styling */
+#power-graph {
+  max-width: 100%;
+  height: auto;
+}
+
+.power-pip:hover {
+  opacity: 0.8;
+}
+
+.power-title {
+  font-weight: bold;
+}
+
+
+.modal-header {
+  border-color: #30363d;
+}
+
+/* Loadout slot card backgrounds */
+.slot-card-cooler           { background-color: #0d2d40; border-color: #4fc3f7 !important; }
+.slot-card-power_plant      { background-color: #3d1f00; border-color: #ff9800 !important; }
+.slot-card-shield_generator { background-color: #252a2e; border-color: #90a4ae !important; }
+.slot-card-quantum_drive    { background-color: #0a2e14; border-color: #4caf50 !important; }
+.slot-card-weapon           { background-color: #2d1515; border-color: #ef5350 !important; }
+.slot-card-empty            { background-color: #13171c !important; border-color: #30363d !important; }
+
+/* Slot type label colors */
+.slot-label-cooler           { color: #4fc3f7; }
+.slot-label-power_plant      { color: #ff9800; }
+.slot-label-shield_generator { color: #90a4ae; }
+.slot-label-quantum_drive    { color: #4caf50; }
+.slot-label-weapon           { color: #ef5350; }
+
+/* Remove Ship toggle button */
+.btn-remove-ship {
+  color: #8b949e;
+  background-color: transparent;
+  border-color: #30363d;
+}
+.btn-remove-ship:hover,
+.btn-remove-ship.active {
+  color: #fff;
+  background-color: #da3633;
+  border-color: #da3633;
+}
+
+/* Delete overlay on hangar cards */
+.hangar-delete-overlay {
+  display: none;
+  position: absolute;
+  inset: 0;
+  background: rgba(180, 0, 0, 0.65);
+  align-items: center;
+  justify-content: center;
+  border-radius: inherit;
+}
+.delete-mode .hangar-delete-overlay {
+  display: flex;
+}
+
+/* Ship images — hangar card horizontal layout */
+.hangar-card {
+  height: 110px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.hangar-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 0 12px 2px rgba(210, 153, 34, 0.55);
+}
+
+.hangar-card-body {
+  min-width: 0;
+}
+
+.hangar-card-img-wrap {
+  width: 150px;
+  flex-shrink: 0;
+  border-left: 1px solid #30363d;
+  background-color: #0d1117;
+}
+
+.hangar-card-img {
+  width: 150px;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  display: block;
+}
+
+/* Ship images — detail page header */
+.ship-detail-img {
+  width: 300px;
+  height: 200px;
+  object-fit: contain;
+  object-position: center;
+  background-color: #0d1117;
+  border: 1px solid #30363d;
+  flex-shrink: 0;
+}
+
+.ship-detail-img-placeholder {
+  width: 300px;
+  height: 200px;
+  background-color: #0d1117;
+  border: 1px solid #30363d;
+  flex-shrink: 0;
+}
+
+code {
+  color: #79c0ff;
+  background-color: rgba(121, 192, 255, 0.1);
+  padding: 0.1em 0.3em;
+  border-radius: 4px;
+}

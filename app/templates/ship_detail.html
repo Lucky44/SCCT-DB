@@ -1,0 +1,380 @@
+{% extends "base.html" %}
+{% block title %}{{ my_ship.nickname or (my_ship.ship.name | ship_model) }} — SCCT{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb + Remove button -->
+<div class="d-flex align-items-center justify-content-between mb-2">
+  <nav aria-label="breadcrumb" class="mb-0">
+    <ol class="breadcrumb mb-0">
+      <li class="breadcrumb-item"><a href="{{ url_for('my_ships.index') }}">My Hangar</a></li>
+      <li class="breadcrumb-item active">{{ my_ship.nickname or (my_ship.ship.name | ship_model) }}</li>
+    </ol>
+  </nav>
+  <form action="{{ url_for('my_ships.delete', my_ship_id=my_ship.id) }}" method="post"
+        onsubmit="return confirm('Remove this ship from your fleet?')">
+    <button class="btn btn-outline-danger btn-sm"><i class="bi bi-trash me-1"></i>Remove</button>
+  </form>
+</div>
+
+<!-- Top row: [name/details/image] | [stats card + power card] -->
+{% set ss = my_ship.ship.ship_stats or {} %}
+{% macro stat(label, value, unit='') %}<div class="mb-1"><span class="text-muted">{{ label }}:</span> <span class="fw-semibold">{{ value }}</span>{% if unit %} <span class="text-muted">{{ unit }}</span>{% endif %}</div>{% endmacro %}
+<div class="d-flex align-items-start gap-3 mb-4">
+
+  <!-- Left column: name / manufacturer / details / image -->
+  <div class="flex-shrink-0">
+    <h1 class="h1 mb-0">
+      {{ my_ship.ship.name | ship_model }}
+      {% if my_ship.nickname %}<span class="text-warning">"{{ my_ship.nickname }}"</span>{% endif %}
+    </h1>
+    <div class="text-muted mb-2">{{ my_ship.ship.manufacturer }}</div>
+    <a href="#details-section" class="btn btn-outline-info btn-sm mb-3">DETAILS</a>
+    {% if my_ship.ship.image_path %}
+      <img src="{{ url_for('static', filename=my_ship.ship.image_path) }}"
+           class="ship-detail-img rounded d-block" alt="{{ my_ship.ship.name | ship_model }}">
+    {% else %}
+      <div class="ship-detail-img-placeholder rounded d-flex align-items-center justify-content-center text-muted">
+        <i class="bi bi-rocket fs-1 opacity-25"></i>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Right: stats + power cards, equal height -->
+  <div class="d-flex align-items-stretch gap-3 flex-grow-1">
+
+    <!-- Ship stats card -->
+    <div class="card border-secondary flex-shrink-0">
+      <div class="card-header bg-dark">
+        <h5 class="mb-0"><i class="bi bi-bar-chart-fill text-info me-2"></i>Ship Stats</h5>
+      </div>
+      <div class="card-body px-3 py-2">
+        <div class="d-flex gap-4">
+          <div>
+            {{ stat('Gun DPS', combat_stats.gun_dps) }}
+            {{ stat('Shield HP', combat_stats.shield_hp) }}
+            {{ stat('Armor HP', ss.armor_hp|int if ss.armor_hp else '—') }}
+            {{ stat('SCM Speed', (ss.scm_speed|int if ss.scm_speed else '—'), 'm/s') }}
+            {{ stat('Nav Speed', (ss.max_speed|int if ss.max_speed else '—'), 'm/s') }}
+          </div>
+          <div>
+            {{ stat('Shield Regen', combat_stats.shield_regen, '/s') }}
+            {% if ss.pitch %}
+            {{ stat('Pitch/Yaw/Roll', ss.pitch|int ~ '/' ~ ss.yaw|int ~ '/' ~ ss.roll|int, '°/s') }}
+            {% endif %}
+            {% if ss.pitch_boosted %}
+            {{ stat('Boost P/Y/R', ss.pitch_boosted|int ~ '/' ~ ss.yaw_boosted|int ~ '/' ~ ss.roll_boosted|int, '°/s') }}
+            {% endif %}
+            {{ stat('Cargo', (my_ship.ship.cargo_scu or 0), 'SCU') }}
+            {% if ss.length %}
+            {{ stat('L×W×H', ss.length ~ 'm × ' ~ ss.width ~ 'm × ' ~ ss.height ~ 'm') }}
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Power allocation card -->
+    {% if power_stats %}
+    <div class="card border-secondary flex-grow-1">
+      <div class="card-header bg-dark d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+          <i class="bi bi-lightning-fill text-warning me-2"></i>Power Allocation — <span id="power-remaining">{{ used_pips }}</span> / {{ power_stats.total_generation|int }} points in use
+        </h5>
+        <button class="btn btn-sm btn-outline-secondary" onclick="resetPowerAllocation()">Reset to Default</button>
+      </div>
+      <div class="card-body">
+        <div style="overflow-x: auto;">
+          <svg id="power-graph"
+               width="100%"
+               height="480"
+               viewBox="0 0 1200 480"
+               preserveAspectRatio="xMinYMid meet"
+               data-total-generation="{{ power_stats.total_generation }}"
+               data-my-ship-id="{{ my_ship.id }}"
+               data-allocation='{{ current_allocation | tojson }}'
+               data-max-draw='{{ max_draw | tojson }}'>
+            <!-- Graph will be rendered by JavaScript -->
+          </svg>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+  </div><!-- end right cards -->
+
+</div>
+
+<h2 class="h5 mb-3"><i class="bi bi-grid-3x3-gap-fill text-warning me-2"></i>Loadout</h2>
+
+{% if default_slots %}
+  {% for slot_type, slots_in_group in default_slots | groupby('slot_type') %}
+  <div class="mb-4">
+    <h6 class="text-uppercase fw-semibold slot-label-{{ slot_type }} mb-2">
+      {{ slot_type.replace('_', ' ') }}
+    </h6>
+    <div class="row g-2 row-cols-xl-6 row-cols-lg-4 row-cols-sm-3 row-cols-2">
+      {% for slot in slots_in_group %}
+        {% set my_slot = my_slots.get((slot.slot_type, slot.slot_number)) %}
+        {% set has_item = my_slot and (my_slot.component or my_slot.weapon) %}
+        <div class="col">
+          <div class="card h-100 {{ 'slot-card-' + slot_type if has_item else 'slot-card-empty' }}"
+               id="slot-card-{{ my_slot.id if my_slot else 'none-' + loop.index|string }}"
+               {% if has_item and my_slot.component %}data-component-id="{{ my_slot.component.id }}"
+               {% elif has_item and my_slot.weapon %}data-weapon-id="{{ my_slot.weapon.id }}"{% endif %}>
+            <div class="card-body p-2">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <span class="badge bg-dark border">S{{ slot.slot_size }}</span>
+                {% if my_slot %}
+                <button class="btn btn-link btn-sm p-0 text-secondary"
+                        onclick="openPicker({{ my_slot.id }}, '{{ slot.slot_type }}', {{ slot.slot_size }})">
+                  <i class="bi bi-pencil"></i>
+                </button>
+                {% endif %}
+              </div>
+              <div class="small fw-semibold mt-1"
+                   id="slot-equipped-{{ my_slot.id if my_slot else 'none-' + loop.index|string }}">
+                {% if has_item %}
+                  {% if my_slot.component %}{{ my_slot.component.name }}
+                  {% else %}{{ my_slot.weapon.name }}
+                  {% endif %}
+                {% else %}
+                  <span class="text-muted fst-italic">EMPTY</span>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+{% endif %}
+
+{% if weapon_groups %}
+<h2 class="h5 mb-3 mt-2"><i class="bi bi-crosshair text-warning me-2"></i>Weapons</h2>
+{% for (mount_group, mount_type, mount_label), slots in weapon_groups %}
+<div class="mb-4">
+  <h6 class="text-uppercase fw-semibold slot-label-weapon mb-2">
+    {% if mount_type == 'pilot' %}
+      <i class="bi bi-person-fill me-1"></i>Pilot Weapons
+    {% elif mount_type == 'manned_turret' %}
+      <i class="bi bi-person-fill me-1"></i>{{ mount_label or 'Manned Turret' }}
+    {% else %}
+      <i class="bi bi-broadcast me-1"></i>{{ mount_label or 'Remote Turret' }}
+    {% endif %}
+  </h6>
+  <div class="row g-2 row-cols-xl-6 row-cols-lg-4 row-cols-sm-3 row-cols-2">
+    {% for slot in slots %}
+      {% set my_slot = my_slots.get((slot.slot_type, slot.slot_number)) %}
+      {% set has_item = my_slot and my_slot.weapon %}
+      <div class="col">
+        <div class="card h-100 {{ 'slot-card-weapon' if has_item else 'slot-card-empty' }}"
+             id="slot-card-{{ my_slot.id if my_slot else 'none-w-' + loop.index|string }}"
+             {% if has_item %}data-weapon-id="{{ my_slot.weapon.id }}"{% endif %}>
+          <div class="card-body p-2">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <span class="badge bg-dark border">S{{ slot.slot_size }}</span>
+              {% if my_slot %}
+              <button class="btn btn-link btn-sm p-0 text-secondary"
+                      onclick="openPicker({{ my_slot.id }}, 'weapon', {{ slot.slot_size }})">
+                <i class="bi bi-pencil"></i>
+              </button>
+              {% endif %}
+            </div>
+            <div class="small fw-semibold mt-1">
+              {% if has_item %}{{ my_slot.weapon.name }}
+              {% else %}<span class="text-muted fst-italic">EMPTY</span>{% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endfor %}
+{% endif %}
+
+{% if not default_slots and not weapon_groups %}
+<div class="text-muted fst-italic">No default loadout data for this ship yet.</div>
+{% endif %}
+
+<!-- Detailed Stats Section -->
+<div class="mt-4 mb-4" id="details-section">
+  <h2 class="h5 mb-3"><i class="bi bi-info-circle text-info me-2"></i>Ship Details</h2>
+  {% set ss = my_ship.ship.ship_stats or {} %}
+  {% macro dstat(label, value, unit='') %}<div class="mb-1"><span class="text-muted">{{ label }}:</span> {% if value is not none and value != '' %}<span class="fw-semibold">{{ value }}</span>{% if unit %} <span class="text-muted">{{ unit }}</span>{% endif %}{% else %}<span class="text-muted">—</span>{% endif %}</div>{% endmacro %}
+  <div class="row g-3">
+
+    <!-- Combat -->
+    <div class="col-md-4">
+      <div class="card border-secondary h-100">
+        <div class="card-header bg-dark py-2">
+          <span class="fw-semibold text-warning"><i class="bi bi-crosshair me-1"></i>Combat</span>
+        </div>
+        <div class="card-body py-2 px-3 small">
+          {% if combat_stats.pilot_dps_burst %}
+          {{ dstat('Pilot DPS (Burst)', combat_stats.pilot_dps_burst) }}
+          {{ dstat('Pilot DPS (Sustained)', combat_stats.pilot_dps_sustained) }}
+          {% endif %}
+          {% if combat_stats.turret_dps_burst %}
+          {{ dstat('Crew DPS (Burst)', combat_stats.turret_dps_burst) }}
+          {{ dstat('Crew DPS (Sustained)', combat_stats.turret_dps_sustained) }}
+          {% endif %}
+          {% if ss.missile_damage_default %}
+          {{ dstat('Missile Damage', ss.missile_damage_default|int) }}
+          {% endif %}
+          {{ dstat('Ship HP', ss.ship_hp|int if ss.ship_hp else none) }}
+          {{ dstat('Armor HP', ss.armor_hp|int if ss.armor_hp else none) }}
+          {{ dstat('Shield HP', combat_stats.shield_hp if combat_stats.shield_hp else none) }}
+          {{ dstat('Shield Regen', combat_stats.shield_regen if combat_stats.shield_regen else none, '/s') }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Damage Modifiers -->
+    <div class="col-md-4">
+      <div class="card border-secondary h-100">
+        <div class="card-header bg-dark py-2">
+          <span class="fw-semibold text-danger"><i class="bi bi-shield-fill me-1"></i>Damage Modifiers</span>
+        </div>
+        <div class="card-body py-2 px-3 small">
+          {% if ss.dmg_mult_physical is not none %}
+          {{ dstat('Physical', '%.0f%%'|format(ss.dmg_mult_physical * 100)) }}
+          {% endif %}
+          {% if ss.dmg_mult_energy is not none %}
+          {{ dstat('Energy', '%.0f%%'|format(ss.dmg_mult_energy * 100)) }}
+          {% endif %}
+          {% if ss.dmg_mult_distortion is not none %}
+          {{ dstat('Distortion', '%.0f%%'|format(ss.dmg_mult_distortion * 100)) }}
+          {% endif %}
+          {% if ss.dmg_mult_thermal is not none %}
+          {{ dstat('Thermal', '%.0f%%'|format(ss.dmg_mult_thermal * 100)) }}
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobility -->
+    <div class="col-md-4">
+      <div class="card border-secondary h-100">
+        <div class="card-header bg-dark py-2">
+          <span class="fw-semibold text-success"><i class="bi bi-arrow-up-right-circle me-1"></i>Mobility</span>
+        </div>
+        <div class="card-body py-2 px-3 small">
+          {{ dstat('SCM Speed', ss.scm_speed|int if ss.scm_speed else none, 'm/s') }}
+          {{ dstat('Nav Speed', ss.max_speed|int if ss.max_speed else none, 'm/s') }}
+          {% if ss.pitch %}
+          {{ dstat('Pitch/Yaw/Roll', ss.pitch|int ~ '/' ~ ss.yaw|int ~ '/' ~ ss.roll|int, '°/s') }}
+          {% endif %}
+          {% if ss.pitch_boosted %}
+          {{ dstat('Boost P/Y/R', ss.pitch_boosted|int ~ '/' ~ ss.yaw_boosted|int ~ '/' ~ ss.roll_boosted|int, '°/s') }}
+          {% endif %}
+          {% if ss.accel_forward %}
+          {{ dstat('Accel Forward', ss.accel_forward|int, 'm/s²') }}
+          {% endif %}
+          {% if ss.accel_back %}
+          {{ dstat('Accel Reverse', ss.accel_back|int, 'm/s²') }}
+          {% endif %}
+          {% if ss.accel_lateral %}
+          {{ dstat('Accel Lateral', ss.accel_lateral|int, 'm/s²') }}
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Logistics -->
+    <div class="col-md-4">
+      <div class="card border-secondary h-100">
+        <div class="card-header bg-dark py-2">
+          <span class="fw-semibold text-info"><i class="bi bi-box-seam me-1"></i>Logistics</span>
+        </div>
+        <div class="card-body py-2 px-3 small">
+          {{ dstat('Cargo', (my_ship.ship.cargo_scu or 0), 'SCU') }}
+          {{ dstat('Crew', my_ship.ship.crew_size) }}
+          {{ dstat('H. Fuel', ss.fuel_hydrogen|int if ss.fuel_hydrogen else none) }}
+          {{ dstat('Q. Fuel', ss.fuel_quantum|int if ss.fuel_quantum else none) }}
+          {% if ss.insurance_standard %}
+          {{ dstat('Standard Claim', '%.1f'|format(ss.insurance_standard), 'min') }}
+          {% endif %}
+          {% if ss.insurance_expedited %}
+          {{ dstat('Expedited Claim', '%.1f'|format(ss.insurance_expedited), 'min') }}
+          {% endif %}
+          {% if ss.insurance_expedite_cost %}
+          {{ dstat('Expedite Cost', ss.insurance_expedite_cost|int, 'aUEC') }}
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Dimensions -->
+    <div class="col-md-4">
+      <div class="card border-secondary h-100">
+        <div class="card-header bg-dark py-2">
+          <span class="fw-semibold text-secondary"><i class="bi bi-rulers me-1"></i>Dimensions</span>
+        </div>
+        <div class="card-body py-2 px-3 small">
+          {% if ss.length %}
+          {{ dstat('Length', ss.length, 'm') }}
+          {{ dstat('Width', ss.width, 'm') }}
+          {{ dstat('Height', ss.height, 'm') }}
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Edit nickname / notes -->
+<div class="mt-4">
+  <h2 class="h5 mb-3"><i class="bi bi-pencil-square text-secondary me-2"></i>Edit Ship Info</h2>
+  <form action="{{ url_for('my_ships.edit', my_ship_id=my_ship.id) }}" method="post" class="row g-2">
+    <div class="col-sm-4">
+      <input type="text" name="nickname" class="form-control form-control-sm"
+             placeholder="Nickname (optional)" value="{{ my_ship.nickname or '' }}">
+    </div>
+    <div class="col-sm-6">
+      <input type="text" name="notes" class="form-control form-control-sm"
+             placeholder="Notes (optional)" value="{{ my_ship.notes or '' }}">
+    </div>
+    <div class="col-auto">
+      <button type="submit" class="btn btn-secondary btn-sm">Save</button>
+    </div>
+  </form>
+</div>
+
+<!-- Component stats modal -->
+<div class="modal fade" id="statsModal" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="statsModalTitle">Component Stats</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="statsModalBody">
+        <div class="text-center py-4"><div class="spinner-border text-warning"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Component picker modal -->
+<div class="modal fade" id="pickerModal" tabindex="-1">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Select Component</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body overflow-auto" id="pickerBody" style="max-height:70vh">
+        <div class="text-center py-4"><div class="spinner-border text-warning"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/power_graph.js') }}?v=17"></script>
+<script src="{{ url_for('static', filename='js/ship_detail.js') }}"></script>
+{% endblock %}
