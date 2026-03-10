@@ -23,15 +23,18 @@ def get_power_stats(my_ship):
         "quantum_drive": [],
         "weapon": [],
     }
+    has_power_plant_slot = False
     for slot in my_ship.loadout:
+        if slot.slot_type == "power_plant":
+            has_power_plant_slot = True
         if slot.component and slot.slot_type in equipment_by_type:
             equipment_by_type[slot.slot_type].append(slot.component)
         elif slot.weapon and slot.slot_type == "weapon":
             equipment_by_type["weapon"].append(slot.weapon)
 
-    # Total power generation: sum from equipped power plants, fall back to ship base value
+    # Total power generation: sum equipped plants; if slots exist but all empty → 0
     equipped_plants = equipment_by_type["power_plant"]
-    if equipped_plants:
+    if has_power_plant_slot:
         power_stats["total_generation"] = float(sum(
             (p.stats or {}).get("power_generation") or 0 for p in equipped_plants
         ))
