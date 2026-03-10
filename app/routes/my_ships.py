@@ -17,6 +17,7 @@ def get_power_stats(my_ship):
 
     # Collect equipped components by slot type (not component_type, which may differ)
     equipment_by_type = {
+        "power_plant": [],
         "cooler": [],
         "shield_generator": [],
         "quantum_drive": [],
@@ -27,6 +28,13 @@ def get_power_stats(my_ship):
             equipment_by_type[slot.slot_type].append(slot.component)
         elif slot.weapon and slot.slot_type == "weapon":
             equipment_by_type["weapon"].append(slot.weapon)
+
+    # Total power generation: sum from equipped power plants, fall back to ship base value
+    equipped_plants = equipment_by_type["power_plant"]
+    if equipped_plants:
+        power_stats["total_generation"] = float(sum(
+            (p.stats or {}).get("power_generation") or 0 for p in equipped_plants
+        ))
 
     segs = ship.power_segments or {}
 
