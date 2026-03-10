@@ -53,8 +53,14 @@ def weapons():
     if size:
         q = q.filter(Weapon.size == size)
 
-    results = [
-        {
+    seen = set()
+    results = []
+    for w in q.order_by(Weapon.weapon_type, Weapon.name).all():
+        key = (w.name, w.size)
+        if key in seen:
+            continue
+        seen.add(key)
+        results.append({
             "id": w.id,
             "name": w.name,
             "type": w.weapon_type,
@@ -64,9 +70,7 @@ def weapons():
             "manufacturer": w.manufacturer,
             "dps": (w.stats or {}).get("dps"),
             "speed": (w.stats or {}).get("speed"),
-        }
-        for w in q.order_by(Weapon.weapon_type, Weapon.name).all()
-    ]
+        })
     return jsonify(results)
 
 

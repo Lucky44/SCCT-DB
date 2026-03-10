@@ -370,6 +370,7 @@ def do_import(ships_path, items_path, log=print):
         # ----------------------------------------------------------------
         log("Importing weapons …")
         weapon_by_class = {}   # className → Weapon (DB object)
+        weapon_seen = {}       # (name, size) → Weapon (deduplicate display names)
 
         for item in raw_items:
             itype = item.get("type", "")
@@ -383,6 +384,14 @@ def do_import(ships_path, items_path, log=print):
             std = item.get("stdItem") or {}
             mfr = get_manufacturer(item)
             size = item.get("size")
+
+            # If we already have a weapon with this name+size, reuse it so
+            # that multiple className variants (fixed/gimbal/etc.) don't create
+            # duplicate rows.  Still map every className so loadout refs work.
+            dedup_key = (name, size)
+            if dedup_key in weapon_seen:
+                weapon_by_class[item["className"]] = weapon_seen[dedup_key]
+                continue
 
             # weapon_type: use DescriptionData "Item Type" for a human-readable label
             desc = get_desc_data(item)
@@ -413,6 +422,7 @@ def do_import(ships_path, items_path, log=print):
             db.session.flush()
 
             weapon_by_class[item["className"]] = weapon
+            weapon_seen[dedup_key] = weapon
 
         db.session.commit()
         log(f"  → {db.session.query(Weapon).count()} weapons")

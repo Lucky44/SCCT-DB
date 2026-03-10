@@ -76,6 +76,38 @@ def components():
     )
 
 
+@browser_bp.route("/weapons")
+def weapons():
+    q = db.session.query(Weapon)
+
+    weapon_type = request.args.get("type", "").strip()
+    size = request.args.get("size", "").strip()
+    manufacturer = request.args.get("manufacturer", "").strip()
+    search = request.args.get("q", "").strip()
+
+    if weapon_type:
+        q = q.filter(Weapon.weapon_type == weapon_type)
+    if size:
+        q = q.filter(Weapon.size == int(size))
+    if manufacturer:
+        q = q.filter(Weapon.manufacturer == manufacturer)
+    if search:
+        q = q.filter(Weapon.name.ilike(f"%{search}%"))
+
+    weapons_list = q.order_by(Weapon.weapon_type, Weapon.size, Weapon.name).all()
+
+    types = [r[0] for r in db.session.query(Weapon.weapon_type).distinct().order_by(Weapon.weapon_type) if r[0]]
+    manufacturers = [r[0] for r in db.session.query(Weapon.manufacturer).distinct().order_by(Weapon.manufacturer) if r[0]]
+
+    return render_template(
+        "weapons.html",
+        weapons=weapons_list,
+        types=types,
+        manufacturers=manufacturers,
+        filters={"type": weapon_type, "size": size, "manufacturer": manufacturer, "q": search},
+    )
+
+
 @browser_bp.route("/ships/<int:ship_id>")
 def ship_detail(ship_id):
     ship = db.session.get(Ship, ship_id) or abort(404)

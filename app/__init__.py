@@ -1,4 +1,6 @@
 import os
+import re
+import unicodedata
 from flask import Flask, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -42,5 +44,16 @@ def create_app():
         """Strip the manufacturer abbreviation prefix (first word) from a ship name."""
         parts = name.split(" ", 1)
         return parts[1] if len(parts) > 1 else name
+
+    @app.template_filter("ship_image")
+    def ship_image_filter(name):
+        """Derive the static image path from a ship name."""
+        # Strip accents (ā→a, ī→i, etc.) — but handle ī specially before stripping
+        s = name.replace('yāi', 'y_i')  # San'tok.yāi edge case
+        s = unicodedata.normalize('NFKD', s).encode('ascii', 'ignore').decode()
+        s = s.lower()
+        s = re.sub(r'[^a-z0-9\-]+', '_', s)  # non-alphanum/hyphen → underscore
+        s = re.sub(r'_+', '_', s).strip('_')
+        return f'images/ships/{s}.jpg'
 
     return app

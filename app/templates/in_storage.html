@@ -4,30 +4,30 @@
 {% block content %}
 <div class="d-flex align-items-center mb-4">
   <h1 class="h3 mb-0 me-auto">
-    <i class="bi bi-box-seam-fill text-info me-2"></i>In Storage
+    <i class="bi bi-box-seam-fill text-success me-2"></i>In Storage
   </h1>
-  <button class="btn btn-info btn-sm me-2" data-bs-toggle="modal" data-bs-target="#addComponentModal">
+  <button class="btn btn-success btn-sm me-2" data-bs-toggle="modal" data-bs-target="#addComponentModal">
     <i class="bi bi-plus-circle me-1"></i>Add Component
   </button>
-  <button class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#addWeaponModal">
+  <button class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#addWeaponModal">
     <i class="bi bi-plus-circle me-1"></i>Add Weapon
   </button>
 </div>
 
 <ul class="nav nav-tabs mb-4" id="invTabs" role="tablist">
-  <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-power-plants">
+  <li class="nav-item"><button class="nav-link active inv-tab-power_plant" data-bs-toggle="tab" data-bs-target="#tab-power-plants">
     Power Plants ({{ components_by_type['power_plant']|length }})
   </button></li>
-  <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-coolers">
+  <li class="nav-item"><button class="nav-link inv-tab-cooler" data-bs-toggle="tab" data-bs-target="#tab-coolers">
     Coolers ({{ components_by_type['cooler']|length }})
   </button></li>
-  <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-shields">
+  <li class="nav-item"><button class="nav-link inv-tab-shield_generator" data-bs-toggle="tab" data-bs-target="#tab-shields">
     Shields ({{ components_by_type['shield_generator']|length }})
   </button></li>
-  <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-quantum-drives">
+  <li class="nav-item"><button class="nav-link inv-tab-quantum_drive" data-bs-toggle="tab" data-bs-target="#tab-quantum-drives">
     Quantum Drives ({{ components_by_type['quantum_drive']|length }})
   </button></li>
-  <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-weapons">
+  <li class="nav-item"><button class="nav-link inv-tab-weapon" data-bs-toggle="tab" data-bs-target="#tab-weapons">
     Weapons ({{ weapons|length }})
   </button></li>
 </ul>
@@ -341,7 +341,7 @@
     <div class="text-center py-5 text-muted">
       <i class="bi bi-crosshair fs-1 d-block mb-3 opacity-25"></i>
       <p>No weapons in inventory.</p>
-      <button class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#addWeaponModal">
+      <button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#addWeaponModal">
         Add your first weapon
       </button>
     </div>
@@ -436,7 +436,7 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-info">Add to Inventory</button>
+          <button type="submit" class="btn btn-success">Add to Inventory</button>
         </div>
       </form>
     </div>
@@ -488,7 +488,7 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-info">Add to Inventory</button>
+          <button type="submit" class="btn btn-danger">Add to Inventory</button>
         </div>
       </form>
     </div>

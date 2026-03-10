@@ -29,14 +29,12 @@
     </h1>
     <div class="text-muted mb-2">{{ my_ship.ship.manufacturer }}</div>
     <a href="#details-section" class="btn btn-outline-info btn-sm mb-3">DETAILS</a>
-    {% if my_ship.ship.image_path %}
-      <img src="{{ url_for('user_static', filename=my_ship.ship.image_path) }}"
-           class="ship-detail-img rounded d-block" alt="{{ my_ship.ship.name | ship_model }}">
-    {% else %}
-      <div class="ship-detail-img-placeholder rounded d-flex align-items-center justify-content-center text-muted">
-        <i class="bi bi-rocket fs-1 opacity-25"></i>
-      </div>
-    {% endif %}
+    <img src="{{ url_for('static', filename=my_ship.ship.name|ship_image) }}"
+         class="ship-detail-img rounded d-block" alt="{{ my_ship.ship.name | ship_model }}"
+         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+    <div class="ship-detail-img-placeholder rounded align-items-center justify-content-center text-muted" style="display:none">
+      <i class="bi bi-rocket fs-1 opacity-25"></i>
+    </div>
   </div>
 
   <!-- Right: stats + power cards, equal height -->
@@ -83,7 +81,7 @@
           </h5>
           {% if power_stats.power_plants %}
           <small class="text-muted">
-            {{ power_stats.power_plants | map(attribute='name') | join(', ') }}
+            Current Power Plant{% if power_stats.power_plants|length > 1 %}s{% endif %} — {{ power_stats.power_plants | map(attribute='name') | join(', ') }}
           </small>
           {% else %}
           <small class="text-muted">No power plant equipped</small>
@@ -118,8 +116,12 @@
 {% if default_slots %}
   {% for slot_type, slots_in_group in default_slots | groupby('slot_type') %}
   <div class="mb-4">
-    <h6 class="text-uppercase fw-semibold slot-label-{{ slot_type }} mb-2">
-      {{ slot_type.replace('_', ' ') }}
+    <h6 class="text-uppercase fw-bold slot-label-{{ slot_type }} mb-2">
+      {% if slot_type == 'cooler' %}<i class="bi bi-thermometer-snow me-1"></i>
+      {% elif slot_type == 'power_plant' %}<i class="bi bi-lightning-charge-fill me-1"></i>
+      {% elif slot_type == 'shield_generator' %}<i class="bi bi-shield-fill me-1"></i>
+      {% elif slot_type == 'quantum_drive' %}<i class="bi bi-stars me-1"></i>
+      {% endif %}{{ slot_type.replace('_', ' ') }}
     </h6>
     <div class="row g-2 row-cols-xl-6 row-cols-lg-4 row-cols-sm-3 row-cols-2">
       {% for slot in slots_in_group %}
@@ -163,7 +165,7 @@
 <h2 class="h5 mb-3 mt-2"><i class="bi bi-crosshair text-warning me-2"></i>Weapons</h2>
 {% for (mount_group, mount_type, mount_label), slots in weapon_groups %}
 <div class="mb-4">
-  <h6 class="text-uppercase fw-semibold slot-label-weapon mb-2">
+  <h6 class="text-uppercase fw-bold slot-label-weapon mb-2">
     {% if mount_type == 'pilot' %}
       <i class="bi bi-person-fill me-1"></i>Pilot Weapons
     {% elif mount_type == 'manned_turret' %}

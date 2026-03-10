@@ -4,13 +4,16 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}SC Component Tracker{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom border-secondary">
+<nav class="navbar navbar-expand-lg navbar-dark" style="background-color: rgba(8,11,16,0.8); border-bottom: 1px solid rgba(210,153,34,0.4); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
   <div class="container-fluid">
     <a class="navbar-brand fw-bold" href="{{ url_for('dashboard.index') }}">
       <i class="bi bi-rocket-takeoff-fill text-warning me-1"></i> SCCT
@@ -50,10 +53,13 @@
             <li><a class="dropdown-item" href="{{ url_for('browser.components') }}">
               <i class="bi bi-cpu-fill me-1"></i> Components
             </a></li>
+            <li><a class="dropdown-item" href="{{ url_for('browser.weapons') }}">
+              <i class="bi bi-crosshair me-1"></i> Weapons
+            </a></li>
           </ul>
         </li>
       </ul>
-      <span class="navbar-text text-muted small">v0.04</span>
+      <span class="navbar-text text-muted small">v0.06</span>
     </div>
   </div>
 </nav>

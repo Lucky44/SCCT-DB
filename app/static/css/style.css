@@ -1,6 +1,7 @@
 /* SC Component Tracker — custom styles */
 
 body {
+  font-family: 'Inter', sans-serif;
   background-color: #0d1117;
   background-image: url('/static/images/background.jpg');
   background-size: cover;
@@ -9,18 +10,43 @@ body {
   color: #e6edf3;
 }
 
+h1, h2, h3, h4, h5, h6,
+.navbar-brand, .card-header, .btn, .nav-link, .display-5 {
+  font-family: 'Orbitron', sans-serif;
+}
+
 .navbar-brand {
   letter-spacing: 0.05em;
 }
 
+/* Stat card labels — tighter line-height when text wraps */
+.card-body .text-uppercase.small {
+  line-height: 1.2;
+}
+
+/* Quick Actions buttons — Inter instead of Orbitron */
+.quick-actions-card .btn {
+  font-family: 'Inter', sans-serif;
+}
+
+/* Dashboard card footer links — consistent font across all 5 cards */
+.card-footer a {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+
 .card {
-  background-color: #161b22;
-  border-color: #30363d;
+  background-color: rgba(13, 17, 23, 0.75);
+  border-color: rgba(210, 153, 34, 0.25);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .card-header, .card-footer {
-  background-color: #0d1117;
-  border-color: #30363d;
+  background-color: rgba(8, 11, 16, 0.6);
+  border-color: rgba(210, 153, 34, 0.25);
 }
 
 .table {
@@ -48,8 +74,10 @@ body {
 .class-competition { color: #ff7b72; }
 
 .modal-content {
-  background-color: #161b22;
-  border-color: #30363d;
+  background-color: rgba(13, 17, 23, 0.88);
+  border-color: rgba(210, 153, 34, 0.3);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 /* Power allocation graph styling */
@@ -72,18 +100,18 @@ body {
 }
 
 /* Loadout slot card backgrounds */
-.slot-card-cooler           { background-color: #0d2d40; border-color: #4fc3f7 !important; }
-.slot-card-power_plant      { background-color: #3d1f00; border-color: #ff9800 !important; }
-.slot-card-shield_generator { background-color: #252a2e; border-color: #90a4ae !important; }
-.slot-card-quantum_drive    { background-color: #0a2e14; border-color: #4caf50 !important; }
+.slot-card-cooler           { background-color: #0d2030; border-color: #a0c8e8 !important; }
+.slot-card-power_plant      { background-color: #272200; border-color: #d4b840 !important; }
+.slot-card-shield_generator { background-color: #101c30; border-color: #5b8cc8 !important; }
+.slot-card-quantum_drive    { background-color: #28102a; border-color: #b07090 !important; }
 .slot-card-weapon           { background-color: #2d1515; border-color: #ef5350 !important; }
 .slot-card-empty            { background-color: #13171c !important; border-color: #30363d !important; }
 
 /* Slot type label colors */
-.slot-label-cooler           { color: #4fc3f7; }
-.slot-label-power_plant      { color: #ff9800; }
-.slot-label-shield_generator { color: #90a4ae; }
-.slot-label-quantum_drive    { color: #4caf50; }
+.slot-label-cooler           { color: #a0c8e8; }
+.slot-label-power_plant      { color: #d4b840; }
+.slot-label-shield_generator { color: #5b8cc8; }
+.slot-label-quantum_drive    { color: #b07090; }
 .slot-label-weapon           { color: #ef5350; }
 
 /* Remove Ship toggle button */
@@ -116,6 +144,7 @@ body {
 /* Ship images — hangar card horizontal layout */
 .hangar-card {
   height: 110px;
+  border-width: 3px !important;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
@@ -160,6 +189,41 @@ body {
   background-color: #0d1117;
   border: 1px solid #30363d;
   flex-shrink: 0;
+}
+
+/* Inventory page tab colors — always on */
+.nav-tabs .nav-link.inv-tab-power_plant      { color: #d4b840 !important; }
+.nav-tabs .nav-link.inv-tab-cooler           { color: #a0c8e8 !important; }
+.nav-tabs .nav-link.inv-tab-shield_generator { color: #5b8cc8 !important; }
+.nav-tabs .nav-link.inv-tab-quantum_drive    { color: #b07090 !important; }
+.nav-tabs .nav-link.inv-tab-weapon           { color: #ef5350 !important; }
+.nav-tabs .nav-link.inv-tab-power_plant.active      { border-color: #d4b840 transparent transparent transparent !important; }
+.nav-tabs .nav-link.inv-tab-cooler.active           { border-color: #a0c8e8 transparent transparent transparent !important; }
+.nav-tabs .nav-link.inv-tab-shield_generator.active { border-color: #5b8cc8 transparent transparent transparent !important; }
+.nav-tabs .nav-link.inv-tab-quantum_drive.active    { border-color: #b07090 transparent transparent transparent !important; }
+.nav-tabs .nav-link.inv-tab-weapon.active           { border-color: #ef5350 transparent transparent transparent !important; }
+
+/* DB reference card accent colors */
+.border-db-ships      { border-color: rgba(77, 157, 224, 0.7) !important; border-width: 2px !important; }
+.text-db-ships        { color: #4d9de0; }
+.border-db-components { border-color: rgba(137, 87, 229, 0.7) !important; border-width: 2px !important; }
+.text-db-components   { color: #8957e5; }
+.border-db-weapons    { border-color: rgba(218, 54, 51, 0.7) !important; border-width: 2px !important; }
+.text-db-weapons      { color: #da3633; }
+
+/* Helpful Links card */
+.helpful-link {
+  color: #e6edf3;
+  text-decoration: none;
+  font-size: 1.05rem;
+  transition: transform 0.15s ease, color 0.15s ease, text-shadow 0.15s ease;
+  display: block;
+  text-align: center;
+}
+.helpful-link:hover {
+  color: #d29922;
+  transform: translateY(-3px);
+  text-shadow: 0 0 10px rgba(210, 153, 34, 0.7);
 }
 
 code {

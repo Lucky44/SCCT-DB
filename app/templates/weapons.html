@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Weapon Browser — SCCT{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center mb-4">
+  <h1 class="h3 mb-0 me-auto">
+    <i class="bi bi-crosshair text-db-weapons me-2"></i>Weapon Browser
+  </h1>
+  <span class="text-muted small">{{ weapons|length }} weapons</span>
+</div>
+
+<!-- Filters -->
+<form method="get" class="row g-2 mb-4">
+  <div class="col-sm-3">
+    <input type="text" name="q" class="form-control form-control-sm" placeholder="Search name…" value="{{ filters.q }}">
+  </div>
+  <div class="col-sm-2">
+    <select name="type" class="form-select form-select-sm">
+      <option value="">All types</option>
+      {% for t in types %}
+        <option value="{{ t }}" {% if filters.type == t %}selected{% endif %}>{{ t|capitalize }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-sm-1">
+    <select name="size" class="form-select form-select-sm">
+      <option value="">Size</option>
+      {% for s in range(1, 10) %}
+        <option value="{{ s }}" {% if filters.size == s|string %}selected{% endif %}>S{{ s }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-sm-3">
+    <select name="manufacturer" class="form-select form-select-sm">
+      <option value="">All manufacturers</option>
+      {% for m in manufacturers %}
+        <option value="{{ m }}" {% if filters.manufacturer == m %}selected{% endif %}>{{ m }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-auto">
+    <button type="submit" class="btn btn-secondary btn-sm">Filter</button>
+    <a href="{{ url_for('browser.weapons') }}" class="btn btn-outline-secondary btn-sm">Clear</a>
+  </div>
+</form>
+
+{% if weapons %}
+<div class="table-responsive">
+  <table class="table table-hover align-middle">
+    <thead class="table-dark">
+      <tr>
+        <th>Name</th><th>Type</th><th>Size</th><th>Mount</th><th>Manufacturer</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for w in weapons %}
+      <tr>
+        <td class="fw-semibold">{{ w.name }}</td>
+        <td class="text-muted small text-capitalize">{{ w.weapon_type or '—' }}</td>
+        <td><span class="badge bg-dark border">S{{ w.size }}</span></td>
+        <td class="small text-muted text-capitalize">{{ w.mount_type or '—' }}</td>
+        <td class="small text-muted">{{ w.manufacturer or '—' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="text-center py-5 text-muted">
+  <i class="bi bi-search fs-1 d-block mb-3 opacity-25"></i>
+  <p>No weapons match your filters.</p>
+</div>
+{% endif %}
+{% endblock %}
