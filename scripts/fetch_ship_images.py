@@ -22,8 +22,11 @@ from app import create_app, db
 from app.models import Ship
 
 FLEETYARDS_API = "https://api.fleetyards.net/v1"
-IMAGES_DIR = Path(__file__).parent.parent / "app" / "static" / "images" / "ships"
 RATE_LIMIT_DELAY = 0.3  # seconds between API calls
+
+# Images go in user data dir so they survive app updates
+from config import USER_DATA_DIR
+IMAGES_DIR = Path(USER_DATA_DIR) / "images" / "ships"
 
 # Use requests for HTTP
 import requests

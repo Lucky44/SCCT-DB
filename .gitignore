@@ -22,9 +22,22 @@ instance/
 .DS_Store
 Thumbs.db
 
-# IDE
+# IDE / local tools
 .vscode/
 .idea/
+.claude/
 
 # Logs
 *.log
+
+# Build artifacts
+data/
+dist/
+build/
+*.spec.bak
+
+# Build artifacts
+data/
+dist/
+build/
+*.spec.bak

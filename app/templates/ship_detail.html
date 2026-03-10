@@ -30,7 +30,7 @@
     <div class="text-muted mb-2">{{ my_ship.ship.manufacturer }}</div>
     <a href="#details-section" class="btn btn-outline-info btn-sm mb-3">DETAILS</a>
     {% if my_ship.ship.image_path %}
-      <img src="{{ url_for('static', filename=my_ship.ship.image_path) }}"
+      <img src="{{ url_for('user_static', filename=my_ship.ship.image_path) }}"
            class="ship-detail-img rounded d-block" alt="{{ my_ship.ship.name | ship_model }}">
     {% else %}
       <div class="ship-detail-img-placeholder rounded d-flex align-items-center justify-content-center text-muted">

@@ -47,7 +47,7 @@
         <!-- Right: image -->
         <div class="hangar-card-img-wrap flex-shrink-0">
           {% if my_ship.ship.image_path %}
-            <img src="{{ url_for('static', filename=my_ship.ship.image_path) }}"
+            <img src="{{ url_for('user_static', filename=my_ship.ship.image_path) }}"
                  class="hangar-card-img" alt="{{ my_ship.ship.name | ship_model }}">
           {% else %}
             <div class="hangar-card-img d-flex align-items-center justify-content-center text-muted">

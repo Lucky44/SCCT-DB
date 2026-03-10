@@ -29,12 +29,23 @@ from app.models import Ship, Component, Weapon, ShipDefaultLoadout, MyShip, MySh
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
-DEFAULT_SHIPS_JSON = os.path.join(
-    PROJECT_ROOT, "..", "SC-Component-Tracker", "ships.json"
-)
-DEFAULT_ITEMS_JSON = os.path.join(
-    PROJECT_ROOT, "..", "SC-Component-Tracker", "ship-items.json"
-)
+# When running as a PyInstaller bundle, data files are in sys._MEIPASS/data/
+# When running from source, fall back to the sibling SC-Component-Tracker dir
+if getattr(sys, "frozen", False):
+    _DATA_DIR = os.path.join(sys._MEIPASS, "data")
+else:
+    _DATA_DIR = os.path.join(PROJECT_ROOT, "data")
+
+_LEGACY_DIR = os.path.join(PROJECT_ROOT, "..", "SC-Component-Tracker")
+
+def _find_json(filename):
+    bundled = os.path.join(_DATA_DIR, filename)
+    if os.path.exists(bundled):
+        return bundled
+    return os.path.join(_LEGACY_DIR, filename)
+
+DEFAULT_SHIPS_JSON = _find_json("ships.json")
+DEFAULT_ITEMS_JSON = _find_json("ship-items.json")
 
 # Types we care about as components (non-weapon ship equipment)
 COMPONENT_TYPES = {"PowerPlant", "Cooler", "Shield", "QuantumDrive"}

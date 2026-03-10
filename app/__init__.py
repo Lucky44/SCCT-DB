@@ -1,4 +1,5 @@
-from flask import Flask
+import os
+from flask import Flask, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 
@@ -9,6 +10,12 @@ migrate = Migrate()
 def create_app():
     app = Flask(__name__, instance_relative_config=False)
     app.config.from_object("config.Config")
+
+    # Serve ship images from the user data directory (works both in dev and packaged)
+    @app.route("/user-static/<path:filename>")
+    def user_static(filename):
+        from config import USER_DATA_DIR
+        return send_from_directory(USER_DATA_DIR, filename)
 
     db.init_app(app)
     migrate.init_app(app, db)
