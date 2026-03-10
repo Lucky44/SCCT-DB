@@ -15,9 +15,6 @@ instance/
 *.db
 *.sqlite3
 
-# Migrations (keep folder but not compiled)
-# migrations/versions/*.pyc  <- handled by __pycache__ above
-
 # OS
 .DS_Store
 Thumbs.db
@@ -30,14 +27,7 @@ Thumbs.db
 # Logs
 *.log
 
-# Build artifacts
-data/
-dist/
-build/
-*.spec.bak
-
-# Build artifacts
-data/
+# Build artifacts (data/ is committed — it contains bundled game JSON)
 dist/
 build/
 *.spec.bak

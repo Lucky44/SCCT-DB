@@ -1,0 +1,46 @@
+name: Build & Release
+
+# Trigger: push a version tag like "v1.0" or "v1.2.3"
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Build with PyInstaller
+        run: pyinstaller SCCT.spec
+
+      - name: Zip the build output
+        run: Compress-Archive -Path dist\SCCT\* -DestinationPath SCCT-windows.zip
+        shell: pwsh
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: SCCT-windows.zip
+          name: "SCCT ${{ github.ref_name }}"
+          body: |
+            ## SC Component Tracker ${{ github.ref_name }}
+
+            **Download:** `SCCT-windows.zip` below
+
+            **First-time setup:** Extract the zip, run `SCCT.exe`. On first launch it will import game data and download ship images (~1 min). Your browser will open automatically.
+
+            **Your data** is saved in `%APPDATA%\SCCT` and will not be affected by updates.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
