@@ -20,7 +20,14 @@ def ships():
     if search:
         q = q.filter(Ship.name.ilike(f"%{search}%"))
 
-    ships_list = q.order_by(Ship.manufacturer, Ship.name).all()
+    seen = set()
+    ships_list = []
+    for ship in q.order_by(Ship.name).all():
+        if ship.name not in seen:
+            seen.add(ship.name)
+            ships_list.append(ship)
+
+    ships_list.sort(key=lambda s: s.name.split(' ', 1)[1] if ' ' in s.name else s.name)
 
     manufacturers = [r[0] for r in db.session.query(Ship.manufacturer).distinct().order_by(Ship.manufacturer) if r[0]]
     size_categories = [r[0] for r in db.session.query(Ship.size_category).distinct().order_by(Ship.size_category) if r[0]]

@@ -37,42 +37,40 @@
 </form>
 
 {% if ships %}
-<div class="table-responsive">
-  <table class="table table-hover align-middle">
+<table class="table table-hover align-middle table-sticky">
     <thead class="table-dark">
       <tr>
-        <th>Manufacturer</th>
+        <th></th>
         <th>Ship</th>
+        <th>Manufacturer</th>
         <th>Size</th>
         <th>Crew</th>
         <th>Cargo (SCU)</th>
-        <th></th>
       </tr>
     </thead>
     <tbody>
       {% for ship in ships %}
       <tr>
-        <td class="text-muted small">{{ ship.manufacturer or '—' }}</td>
-        <td class="fw-semibold">
-          <a href="{{ url_for('browser.ship_detail', ship_id=ship.id) }}" class="text-decoration-none">
-            {{ ship.name }}
-          </a>
-        </td>
-        <td><span class="badge bg-secondary">{{ ship.size_category or '—' }}</span></td>
-        <td>{{ ship.crew_size or '—' }}</td>
-        <td>{{ ship.cargo_scu or '—' }}</td>
-        <td class="text-end">
+        <td>
           <form action="{{ url_for('my_ships.add', ship_id=ship.id) }}" method="post" class="d-inline">
             <button class="btn btn-outline-warning btn-sm">
               <i class="bi bi-plus-circle me-1"></i>Add to Fleet
             </button>
           </form>
         </td>
+        <td class="fw-semibold">
+          <a href="{{ url_for('browser.ship_detail', ship_id=ship.id) }}" class="text-decoration-none">
+            {{ ship.name | ship_model }}
+          </a>
+        </td>
+        <td class="text-muted small">{{ ship.manufacturer or '—' }}</td>
+        <td><span class="badge bg-secondary">{{ ship.size_category or '—' }}</span></td>
+        <td>{{ ship.crew_size or '—' }}</td>
+        <td>{{ ship.cargo_scu or '—' }}</td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
-</div>
 {% else %}
 <div class="text-center py-5 text-muted">
   <i class="bi bi-search fs-1 d-block mb-3 opacity-25"></i>

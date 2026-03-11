@@ -1,0 +1,12 @@
+{
+  "_readme": "Manual slot overrides for ships whose component slots are missing from the scunpacked source data. These are applied after each import so they survive data updates. Add entries here whenever you find a ship with missing slots. 'default_component' matches by name+type+size.",
+
+  "MISC Hull C": {
+    "note": "scunpacked ships.json omits Cooler and QuantumDrive hardpoints for the Hull C",
+    "add_slots": [
+      {"slot_type": "cooler",        "slot_size": 3, "default_component": "Blizzard"},
+      {"slot_type": "cooler",        "slot_size": 3, "default_component": "Blizzard"},
+      {"slot_type": "quantum_drive", "slot_size": 3, "default_component": "Kama"}
+    ]
+  }
+}

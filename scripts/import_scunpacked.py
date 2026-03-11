@@ -46,6 +46,7 @@ def _find_json(filename):
 
 DEFAULT_SHIPS_JSON = _find_json("ships.json")
 DEFAULT_ITEMS_JSON = _find_json("ship-items.json")
+DEFAULT_OVERRIDES_JSON = _find_json("ship_slot_overrides.json")
 
 # Types we care about as components (non-weapon ship equipment)
 COMPONENT_TYPES = {"PowerPlant", "Cooler", "Shield", "QuantumDrive"}
@@ -299,370 +300,420 @@ def do_import(ships_path, items_path, log=print):
     with open(items_path, encoding="utf-8") as f:
         raw_items = json.load(f)
 
-        # ----------------------------------------------------------------
-        # 2. Wipe reference tables (preserves user data)
-        # ----------------------------------------------------------------
-        log("Clearing reference tables …")
-        db.session.query(ShipDefaultLoadout).delete()
-        db.session.query(Ship).delete()
-        db.session.query(Component).delete()
-        db.session.query(Weapon).delete()
-        db.session.commit()
+    overrides_path = DEFAULT_OVERRIDES_JSON
+    if os.path.exists(overrides_path):
+        log(f"Loading overrides from: {overrides_path}")
+        with open(overrides_path, encoding="utf-8") as f:
+            raw_overrides = json.load(f)
+        # Strip the readme key
+        ship_slot_overrides = {k: v for k, v in raw_overrides.items() if not k.startswith("_")}
+    else:
+        ship_slot_overrides = {}
 
-        # ----------------------------------------------------------------
-        # 3a. Build missile damage lookup (className → DamageTotal)
-        # ----------------------------------------------------------------
-        missile_damage_by_class = {}
-        for item in raw_items:
-            if item.get("type") == "Missile":
-                dmg = (item.get("stdItem") or {}).get("Missile", {}).get("DamageTotal")
-                if dmg is not None:
-                    missile_damage_by_class[item["className"]] = dmg
+    # ----------------------------------------------------------------
+    # 2. Wipe reference tables (preserves user data)
+    # ----------------------------------------------------------------
+    log("Clearing reference tables …")
+    db.session.query(ShipDefaultLoadout).delete()
+    db.session.query(Ship).delete()
+    db.session.query(Component).delete()
+    db.session.query(Weapon).delete()
+    db.session.commit()
 
-        # ----------------------------------------------------------------
-        # 3. Import components
-        # ----------------------------------------------------------------
-        log("Importing components …")
-        component_by_class = {}   # className → Component (DB object)
-        seen_component_names = set()  # deduplicate by (name, type, size, grade)
+    # ----------------------------------------------------------------
+    # 3a. Build missile damage lookup (className → DamageTotal)
+    # ----------------------------------------------------------------
+    missile_damage_by_class = {}
+    for item in raw_items:
+        if item.get("type") == "Missile":
+            dmg = (item.get("stdItem") or {}).get("Missile", {}).get("DamageTotal")
+            if dmg is not None:
+                missile_damage_by_class[item["className"]] = dmg
 
-        for item in raw_items:
-            itype = item.get("type", "")
-            if itype not in COMPONENT_TYPES:
-                continue
+    # ----------------------------------------------------------------
+    # 3. Import components
+    # ----------------------------------------------------------------
+    log("Importing components …")
+    component_by_class = {}   # className → Component (DB object)
+    component_seen = {}       # (name, type, size, grade) → Component (deduplicate)
 
-            name = clean_name(item.get("name"))
-            if not name:
-                continue
+    for item in raw_items:
+        itype = item.get("type", "")
+        if itype not in COMPONENT_TYPES:
+            continue
 
-            desc = get_desc_data(item)
-            grade_letter = desc.get("Grade") or GRADE_MAP.get(item.get("grade"))
-            class_str = (desc.get("Class") or "").lower() or None
-            mfr = get_manufacturer(item) or (desc.get("Manufacturer") or None)
-            size = item.get("size")
-            comp_type = COMPONENT_TYPE_MAP[itype]
+        name = clean_name(item.get("name"))
+        if not name:
+            continue
 
-            dedup_key = (name, comp_type, size, grade_letter)
+        desc = get_desc_data(item)
+        grade_letter = desc.get("Grade") or GRADE_MAP.get(item.get("grade"))
+        class_str = (desc.get("Class") or "").lower() or None
+        mfr = get_manufacturer(item) or (desc.get("Manufacturer") or None)
+        size = item.get("size")
+        comp_type = COMPONENT_TYPE_MAP[itype]
 
-            if dedup_key in seen_component_names:
-                continue
+        dedup_key = (name, comp_type, size, grade_letter)
 
-            comp = Component(
-                name=name,
-                component_type=comp_type,
-                size=size,
-                grade=grade_letter,
-                class_=class_str,
-                manufacturer=mfr,
-                stats=extract_stats(item, itype),
-            )
-            db.session.add(comp)
-            db.session.flush()  # get comp.id
+        if dedup_key in component_seen:
+            component_by_class[item["className"]] = component_seen[dedup_key]
+            continue
 
-            component_by_class[item["className"]] = comp
-            seen_component_names.add(dedup_key)
+        comp = Component(
+            name=name,
+            component_type=comp_type,
+            size=size,
+            grade=grade_letter,
+            class_=class_str,
+            manufacturer=mfr,
+            stats=extract_stats(item, itype),
+        )
+        db.session.add(comp)
+        db.session.flush()  # get comp.id
 
-        db.session.commit()
-        log(f"  → {db.session.query(Component).count()} components")
+        component_by_class[item["className"]] = comp
+        component_seen[dedup_key] = comp
 
-        # ----------------------------------------------------------------
-        # 4. Import weapons
-        # ----------------------------------------------------------------
-        log("Importing weapons …")
-        weapon_by_class = {}   # className → Weapon (DB object)
-        weapon_seen = {}       # (name, size) → Weapon (deduplicate display names)
+    db.session.commit()
+    log(f"  → {db.session.query(Component).count()} components")
 
-        for item in raw_items:
-            itype = item.get("type", "")
-            if itype not in WEAPON_TYPES:
-                continue
+    # ----------------------------------------------------------------
+    # 4. Import weapons
+    # ----------------------------------------------------------------
+    log("Importing weapons …")
+    weapon_by_class = {}   # className → Weapon (DB object)
+    weapon_seen = {}       # (name, size) → Weapon (deduplicate display names)
 
-            name = clean_name(item.get("name"))
-            if not name:
-                continue
+    for item in raw_items:
+        itype = item.get("type", "")
+        if itype not in WEAPON_TYPES:
+            continue
 
-            std = item.get("stdItem") or {}
-            mfr = get_manufacturer(item)
-            size = item.get("size")
+        name = clean_name(item.get("name"))
+        if not name:
+            continue
 
-            # If we already have a weapon with this name+size, reuse it so
-            # that multiple className variants (fixed/gimbal/etc.) don't create
-            # duplicate rows.  Still map every className so loadout refs work.
-            dedup_key = (name, size)
-            if dedup_key in weapon_seen:
-                weapon_by_class[item["className"]] = weapon_seen[dedup_key]
-                continue
+        std = item.get("stdItem") or {}
+        mfr = get_manufacturer(item)
+        size = item.get("size")
 
-            # weapon_type: use DescriptionData "Item Type" for a human-readable label
-            desc = get_desc_data(item)
-            weapon_type = desc.get("Item Type") or item.get("subType") or WEAPON_SUBTYPE_MAP.get(itype)
+        # If we already have a weapon with this name+size, reuse it so
+        # that multiple className variants (fixed/gimbal/etc.) don't create
+        # duplicate rows.  Still map every className so loadout refs work.
+        dedup_key = (name, size)
+        if dedup_key in weapon_seen:
+            weapon_by_class[item["className"]] = weapon_seen[dedup_key]
+            continue
 
-            # mount_type: look for it in classification or subtype
-            # SC uses fixed/gimbal/turret distinction
-            mount_type = None
-            cls_str = item.get("classification", "")
-            if "Gimbal" in cls_str or "gimbal" in (item.get("subType", "") or "").lower():
-                mount_type = "gimbal"
-            elif itype == "Turret":
-                mount_type = "turret"
+        # weapon_type: use DescriptionData "Item Type" for a human-readable label
+        desc = get_desc_data(item)
+        weapon_type = desc.get("Item Type") or item.get("subType") or WEAPON_SUBTYPE_MAP.get(itype)
 
-            # damage_type: not cleanly in this data; skip for now
-            damage_type = None
+        # mount_type: look for it in classification or subtype
+        # SC uses fixed/gimbal/turret distinction
+        mount_type = None
+        cls_str = item.get("classification", "")
+        if "Gimbal" in cls_str or "gimbal" in (item.get("subType", "") or "").lower():
+            mount_type = "gimbal"
+        elif itype == "Turret":
+            mount_type = "turret"
 
-            weapon = Weapon(
-                name=name,
-                weapon_type=weapon_type,
-                size=size,
-                mount_type=mount_type,
-                damage_type=damage_type,
-                manufacturer=mfr,
-                stats=extract_stats(item, itype),
-            )
-            db.session.add(weapon)
-            db.session.flush()
+        # damage_type: not cleanly in this data; skip for now
+        damage_type = None
 
-            weapon_by_class[item["className"]] = weapon
-            weapon_seen[dedup_key] = weapon
+        weapon = Weapon(
+            name=name,
+            weapon_type=weapon_type,
+            size=size,
+            mount_type=mount_type,
+            damage_type=damage_type,
+            manufacturer=mfr,
+            stats=extract_stats(item, itype),
+        )
+        db.session.add(weapon)
+        db.session.flush()
 
-        db.session.commit()
-        log(f"  → {db.session.query(Weapon).count()} weapons")
+        weapon_by_class[item["className"]] = weapon
+        weapon_seen[dedup_key] = weapon
 
-        # ----------------------------------------------------------------
-        # 5. Import ships + default loadouts
-        # ----------------------------------------------------------------
-        log("Importing ships …")
-        ship_count = 0
-        slot_count = 0
+    db.session.commit()
+    log(f"  → {db.session.query(Weapon).count()} weapons")
 
-        for raw in raw_ships:
-            # Only actual spaceships
-            if not raw.get("IsSpaceship"):
-                continue
+    # ----------------------------------------------------------------
+    # 5. Import ships + default loadouts
+    # ----------------------------------------------------------------
+    log("Importing ships …")
+    ship_count = 0
+    slot_count = 0
+    ship_seen = set()  # deduplicate by name
 
-            name = clean_name(raw.get("Name"))
-            if not name:
-                continue
+    for raw in raw_ships:
+        # Only actual spaceships
+        if not raw.get("IsSpaceship"):
+            continue
 
-            mfr_obj = raw.get("Manufacturer") or {}
-            mfr = mfr_obj.get("Name") or None
-            if mfr == "Unknown Manufacturer":
-                mfr = None
+        name = clean_name(raw.get("Name"))
+        if not name:
+            continue
 
-            power_data = raw.get("Power") or {}
-            fc = raw.get("FlightCharacteristics") or {}
-            speeds = fc.get("Speeds") or {}
-            angular = fc.get("AngularRates") or {}
-            angular_boost = fc.get("AngularRatesBoosted") or {}
-            accel_raw = fc.get("Acceleration", {}).get("Raw") or {}
-            armor = raw.get("Armor") or {}
-            dmg_mults = armor.get("DamageMultipliers") or {}
-            insurance = raw.get("Insurance") or {}
-            propulsion = raw.get("Propulsion") or {}
-            qt = raw.get("QuantumTravel") or {}
+        if name in ship_seen:
+            continue
+        ship_seen.add(name)
 
-            # Compute default missile damage from ship loadout
-            default_missile_damage = 0
-            for entry in raw.get("Loadout", []):
-                entry_types = [it.get("Type", "") for it in entry.get("ItemTypes", [])]
-                if "MissileLauncher" in entry_types:
-                    for sub in entry.get("Loadout", []):
-                        sub_cn = sub.get("ClassName") or ""
-                        if sub_cn in missile_damage_by_class:
-                            default_missile_damage += missile_damage_by_class[sub_cn]
+        mfr_obj = raw.get("Manufacturer") or {}
+        mfr = mfr_obj.get("Name") or None
+        if mfr == "Unknown Manufacturer":
+            mfr = None
 
-            ship_stats = {
-                "ship_hp":         raw.get("Health"),
-                "armor_hp":        armor.get("Health"),
-                "scm_speed":       speeds.get("Scm"),
-                "max_speed":       speeds.get("Max"),
-                "pitch":           angular.get("Pitch"),
-                "yaw":             angular.get("Yaw"),
-                "roll":            angular.get("Roll"),
-                "pitch_boosted":   angular_boost.get("Pitch"),
-                "yaw_boosted":     angular_boost.get("Yaw"),
-                "roll_boosted":    angular_boost.get("Roll"),
-                "accel_forward":   accel_raw.get("Forward"),
-                "accel_back":      accel_raw.get("Backward"),
-                "accel_lateral":   accel_raw.get("Strafe"),
-                "fuel_hydrogen":   propulsion.get("FuelCapacity"),
-                "fuel_quantum":    qt.get("FuelCapacity"),
-                "insurance_standard":       insurance.get("StandardClaimTime"),
-                "insurance_expedited":      insurance.get("ExpeditedClaimTime"),
-                "insurance_expedite_cost":  insurance.get("ExpeditedCost"),
-                "dmg_mult_physical":    dmg_mults.get("Physical"),
-                "dmg_mult_energy":      dmg_mults.get("Energy"),
-                "dmg_mult_distortion":  dmg_mults.get("Distortion"),
-                "dmg_mult_thermal":     dmg_mults.get("Thermal"),
-                "missile_damage_default": default_missile_damage if default_missile_damage else None,
-                "length":          raw.get("Length"),
-                "width":           raw.get("Width"),
-                "height":          raw.get("Height"),
-            }
-            ship = Ship(
-                name=name,
-                manufacturer=mfr,
-                size_category=map_size_category(raw.get("Size")),
-                crew_size=raw.get("Crew") or None,
-                cargo_scu=raw.get("Cargo") or None,
-                source_file="ships.json",
-                power_generation_pips=power_data.get("GenerationSegments") or None,
-                power_segments=power_data.get("UsedSegmentsGrouped") or None,
-                ship_stats=ship_stats,
-            )
-            db.session.add(ship)
-            db.session.flush()
-            ship_count += 1
+        power_data = raw.get("Power") or {}
+        fc = raw.get("FlightCharacteristics") or {}
+        speeds = fc.get("Speeds") or {}
+        angular = fc.get("AngularRates") or {}
+        angular_boost = fc.get("AngularRatesBoosted") or {}
+        accel_raw = fc.get("Acceleration", {}).get("Raw") or {}
+        armor = raw.get("Armor") or {}
+        dmg_mults = armor.get("DamageMultipliers") or {}
+        insurance = raw.get("Insurance") or {}
+        propulsion = raw.get("Propulsion") or {}
+        qt = raw.get("QuantumTravel") or {}
 
-            # -- Parse loadout slots --
-            slot_counters = {}  # slot_type → running count
-            turret_groups  = {}  # turret ClassName → mount_group int
-            turret_info    = {}  # turret ClassName → (mount_type, mount_label)
-            turret_counter = 0
+        # Compute default missile damage from ship loadout
+        default_missile_damage = 0
+        for entry in raw.get("Loadout", []):
+            entry_types = [it.get("Type", "") for it in entry.get("ItemTypes", [])]
+            if "MissileLauncher" in entry_types:
+                for sub in entry.get("Loadout", []):
+                    sub_cn = sub.get("ClassName") or ""
+                    if sub_cn in missile_damage_by_class:
+                        default_missile_damage += missile_damage_by_class[sub_cn]
 
-            for entry in raw.get("Loadout", []):
-                entry_types = slot_types_from_entry(entry)
-                class_name = entry.get("ClassName") or ""
+        ship_stats = {
+            "ship_hp":         raw.get("Health"),
+            "armor_hp":        armor.get("Health"),
+            "scm_speed":       speeds.get("Scm"),
+            "max_speed":       speeds.get("Max"),
+            "pitch":           angular.get("Pitch"),
+            "yaw":             angular.get("Yaw"),
+            "roll":            angular.get("Roll"),
+            "pitch_boosted":   angular_boost.get("Pitch"),
+            "yaw_boosted":     angular_boost.get("Yaw"),
+            "roll_boosted":    angular_boost.get("Roll"),
+            "accel_forward":   accel_raw.get("Forward"),
+            "accel_back":      accel_raw.get("Backward"),
+            "accel_lateral":   accel_raw.get("Strafe"),
+            "fuel_hydrogen":   propulsion.get("FuelCapacity"),
+            "fuel_quantum":    qt.get("FuelCapacity"),
+            "insurance_standard":       insurance.get("StandardClaimTime"),
+            "insurance_expedited":      insurance.get("ExpeditedClaimTime"),
+            "insurance_expedite_cost":  insurance.get("ExpeditedCost"),
+            "dmg_mult_physical":    dmg_mults.get("Physical"),
+            "dmg_mult_energy":      dmg_mults.get("Energy"),
+            "dmg_mult_distortion":  dmg_mults.get("Distortion"),
+            "dmg_mult_thermal":     dmg_mults.get("Thermal"),
+            "missile_damage_default": default_missile_damage if default_missile_damage else None,
+            "length":          raw.get("Length"),
+            "width":           raw.get("Width"),
+            "height":          raw.get("Height"),
+        }
+        ship = Ship(
+            name=name,
+            manufacturer=mfr,
+            size_category=map_size_category(raw.get("Size")),
+            crew_size=raw.get("Crew") or None,
+            cargo_scu=raw.get("Cargo") or None,
+            source_file="ships.json",
+            power_generation_pips=power_data.get("GenerationSegments") or None,
+            power_segments=power_data.get("UsedSegmentsGrouped") or None,
+            ship_stats=ship_stats,
+        )
+        db.session.add(ship)
+        db.session.flush()
+        ship_count += 1
 
-                if any("Turret" in t for t in entry_types):
-                    is_gimbal = "Gimbal" in class_name
+        # -- Parse loadout slots --
+        slot_counters = {}  # slot_type → running count
+        turret_groups  = {}  # turret ClassName → mount_group int
+        turret_info    = {}  # turret ClassName → (mount_type, mount_label)
+        turret_counter = 0
 
-                    if is_gimbal:
-                        mount_t, mount_g, mount_lbl = "pilot", 0, None
-                    else:
-                        if class_name not in turret_groups:
-                            turret_counter += 1
-                            turret_groups[class_name] = turret_counter
-                            turret_info[class_name] = classify_turret(class_name)
-                        mount_g = turret_groups[class_name]
-                        mount_t, mount_lbl = turret_info[class_name]
+        for entry in raw.get("Loadout", []):
+            entry_types = slot_types_from_entry(entry)
+            class_name = entry.get("ClassName") or ""
 
-                    for gun_size, gun_class in iter_gun_slots(entry):
-                        slot_counters["weapon"] = slot_counters.get("weapon", 0) + 1
-                        default_weapon_id = None
-                        if gun_class and gun_class in weapon_by_class:
-                            default_weapon_id = weapon_by_class[gun_class].id
-                        db.session.add(ShipDefaultLoadout(
-                            ship_id=ship.id,
-                            slot_type="weapon",
-                            slot_number=slot_counters["weapon"],
-                            slot_size=gun_size,
-                            default_component_id=None,
-                            default_weapon_id=default_weapon_id,
-                            mount_type=mount_t,
-                            mount_group=mount_g,
-                            mount_label=mount_lbl,
-                        ))
-                        slot_count += 1
-                    continue
+            if any("Turret" in t for t in entry_types):
+                is_gimbal = "Gimbal" in class_name
 
-                # Non-mount: match against SLOT_TYPE_MAP normally
-                matched_slot_type = None
-                for et in entry_types:
-                    if et in SLOT_TYPE_MAP:
-                        matched_slot_type = et
-                        break
-
-                if not matched_slot_type:
-                    continue
-
-                # Skip bomb/missile launchers that also report WeaponGun — they are
-                # not gun hardpoints (e.g. C2 Hercules belly-ramp S10 BombLauncher entries).
-                if matched_slot_type == "WeaponGun" and any(
-                    t in entry_types for t in ("BombLauncher", "MissileLauncher")
-                ):
-                    continue
-
-                db_slot_type = SLOT_TYPE_MAP[matched_slot_type]
-                slot_counters[db_slot_type] = slot_counters.get(db_slot_type, 0) + 1
-                slot_number = slot_counters[db_slot_type]
-
-                default_component_id = None
-                default_weapon_id = None
-
-                if db_slot_type != "weapon":
-                    if class_name and class_name in component_by_class:
-                        default_component_id = component_by_class[class_name].id
+                if is_gimbal:
+                    mount_t, mount_g, mount_lbl = "pilot", 0, None
                 else:
-                    if class_name and class_name in weapon_by_class:
-                        default_weapon_id = weapon_by_class[class_name].id
+                    if class_name not in turret_groups:
+                        turret_counter += 1
+                        turret_groups[class_name] = turret_counter
+                        turret_info[class_name] = classify_turret(class_name)
+                    mount_g = turret_groups[class_name]
+                    mount_t, mount_lbl = turret_info[class_name]
 
+                for gun_size, gun_class in iter_gun_slots(entry):
+                    slot_counters["weapon"] = slot_counters.get("weapon", 0) + 1
+                    default_weapon_id = None
+                    if gun_class and gun_class in weapon_by_class:
+                        default_weapon_id = weapon_by_class[gun_class].id
+                    db.session.add(ShipDefaultLoadout(
+                        ship_id=ship.id,
+                        slot_type="weapon",
+                        slot_number=slot_counters["weapon"],
+                        slot_size=gun_size,
+                        default_component_id=None,
+                        default_weapon_id=default_weapon_id,
+                        mount_type=mount_t,
+                        mount_group=mount_g,
+                        mount_label=mount_lbl,
+                    ))
+                    slot_count += 1
+                continue
+
+            # Non-mount: match against SLOT_TYPE_MAP normally
+            matched_slot_type = None
+            for et in entry_types:
+                if et in SLOT_TYPE_MAP:
+                    matched_slot_type = et
+                    break
+
+            if not matched_slot_type:
+                continue
+
+            # Skip bomb/missile launchers that also report WeaponGun — they are
+            # not gun hardpoints (e.g. C2 Hercules belly-ramp S10 BombLauncher entries).
+            if matched_slot_type == "WeaponGun" and any(
+                t in entry_types for t in ("BombLauncher", "MissileLauncher")
+            ):
+                continue
+
+            db_slot_type = SLOT_TYPE_MAP[matched_slot_type]
+            slot_counters[db_slot_type] = slot_counters.get(db_slot_type, 0) + 1
+            slot_number = slot_counters[db_slot_type]
+
+            default_component_id = None
+            default_weapon_id = None
+
+            if db_slot_type != "weapon":
+                if class_name and class_name in component_by_class:
+                    default_component_id = component_by_class[class_name].id
+            else:
+                if class_name and class_name in weapon_by_class:
+                    default_weapon_id = weapon_by_class[class_name].id
+
+            db.session.add(ShipDefaultLoadout(
+                ship_id=ship.id,
+                slot_type=db_slot_type,
+                slot_number=slot_number,
+                slot_size=entry.get("MaxSize"),
+                default_component_id=default_component_id,
+                default_weapon_id=default_weapon_id,
+                mount_type="pilot" if db_slot_type == "weapon" else None,
+                mount_group=0 if db_slot_type == "weapon" else None,
+                mount_label=None,
+            ))
+            slot_count += 1
+
+        # -- Apply manual slot overrides for this ship --
+        override = ship_slot_overrides.get(name)
+        if override:
+            for extra in override.get("add_slots", []):
+                stype = extra["slot_type"]
+                slot_counters[stype] = slot_counters.get(stype, 0) + 1
+                # Resolve default component by name+type+size
+                default_component_id = None
+                comp_name = extra.get("default_component")
+                if comp_name:
+                    itype_map = {v: k for k, v in COMPONENT_TYPE_MAP.items()}
+                    itype_key = itype_map.get(stype)
+                    lookup_key = (comp_name, stype, extra.get("slot_size"), None)
+                    # Try with any grade (grade may vary; just match name+type+size)
+                    matched = next(
+                        (c for key, c in component_seen.items()
+                         if key[0] == comp_name and key[1] == stype and key[2] == extra.get("slot_size")),
+                        None
+                    )
+                    if matched:
+                        default_component_id = matched.id
                 db.session.add(ShipDefaultLoadout(
                     ship_id=ship.id,
-                    slot_type=db_slot_type,
-                    slot_number=slot_number,
-                    slot_size=entry.get("MaxSize"),
+                    slot_type=stype,
+                    slot_number=slot_counters[stype],
+                    slot_size=extra.get("slot_size"),
                     default_component_id=default_component_id,
-                    default_weapon_id=default_weapon_id,
-                    mount_type="pilot" if db_slot_type == "weapon" else None,
-                    mount_group=0 if db_slot_type == "weapon" else None,
+                    default_weapon_id=None,
+                    mount_type=None,
+                    mount_group=None,
                     mount_label=None,
                 ))
                 slot_count += 1
 
-        db.session.commit()
-        log(f"  → {ship_count} ships, {slot_count} loadout slots")
+    db.session.commit()
+    log(f"  → {ship_count} ships, {slot_count} loadout slots")
 
-        # ----------------------------------------------------------------
-        # 6. Sync existing user loadouts to updated reference data
-        # ----------------------------------------------------------------
-        log("Syncing user loadouts …")
-        synced = 0
-        for my_ship in db.session.query(MyShip).all():
-            defaults = {
-                (d.slot_type, d.slot_number): d
-                for d in db.session.query(ShipDefaultLoadout).filter_by(ship_id=my_ship.ship_id).all()
-            }
-            user_slots = {(s.slot_type, s.slot_number): s for s in my_ship.loadout}
-
-            # Fix stale IDs and add missing slots
-            for (stype, snum), default in defaults.items():
-                if (stype, snum) in user_slots:
-                    slot = user_slots[(stype, snum)]
-                    # Always reset weapons to the current default — slot structure changes
-                    # frequently during import development and user customization is minimal.
-                    if stype == "weapon" and slot.weapon_id != default.default_weapon_id:
-                        slot.weapon_id = default.default_weapon_id
-                        synced += 1
-                    elif slot.weapon_id and not db.session.get(Weapon, slot.weapon_id):
-                        slot.weapon_id = default.default_weapon_id
-                        synced += 1
-                    if slot.component_id and not db.session.get(Component, slot.component_id):
-                        slot.component_id = default.default_component_id
-                        synced += 1
-                else:
-                    db.session.add(MyShipLoadout(
-                        my_ship_id=my_ship.id,
-                        slot_type=stype,
-                        slot_number=snum,
-                        component_id=default.default_component_id,
-                        weapon_id=default.default_weapon_id,
-                    ))
-                    synced += 1
-
-            # Remove slots that no longer exist in the default loadout
-            for (stype, snum), slot in user_slots.items():
-                if (stype, snum) not in defaults:
-                    db.session.delete(slot)
-                    synced += 1
-
-        db.session.commit()
-        log(f"  → {synced} user loadout entries synced")
-
-        # ----------------------------------------------------------------
-        # 7. Summary
-        # ----------------------------------------------------------------
-        summary = {
-            "ships": db.session.query(Ship).count(),
-            "components": db.session.query(Component).count(),
-            "weapons": db.session.query(Weapon).count(),
-            "slots": db.session.query(ShipDefaultLoadout).count(),
+    # ----------------------------------------------------------------
+    # 6. Sync existing user loadouts to updated reference data
+    # ----------------------------------------------------------------
+    log("Syncing user loadouts …")
+    synced = 0
+    for my_ship in db.session.query(MyShip).all():
+        defaults = {
+            (d.slot_type, d.slot_number): d
+            for d in db.session.query(ShipDefaultLoadout).filter_by(ship_id=my_ship.ship_id).all()
         }
-        log(f"\n=== Import complete ===")
-        log(f"  Ships:         {summary['ships']}")
-        log(f"  Components:    {summary['components']}")
-        log(f"  Weapons:       {summary['weapons']}")
-        log(f"  Loadout slots: {summary['slots']}")
-        return summary
+        user_slots = {(s.slot_type, s.slot_number): s for s in my_ship.loadout}
+
+        # Fix stale IDs and add missing slots
+        for (stype, snum), default in defaults.items():
+            if (stype, snum) in user_slots:
+                slot = user_slots[(stype, snum)]
+                # Always reset weapons to the current default — slot structure changes
+                # frequently during import development and user customization is minimal.
+                if stype == "weapon" and slot.weapon_id != default.default_weapon_id:
+                    slot.weapon_id = default.default_weapon_id
+                    synced += 1
+                elif slot.weapon_id and not db.session.get(Weapon, slot.weapon_id):
+                    slot.weapon_id = default.default_weapon_id
+                    synced += 1
+                if slot.component_id and not db.session.get(Component, slot.component_id):
+                    slot.component_id = default.default_component_id
+                    synced += 1
+            else:
+                db.session.add(MyShipLoadout(
+                    my_ship_id=my_ship.id,
+                    slot_type=stype,
+                    slot_number=snum,
+                    component_id=default.default_component_id,
+                    weapon_id=default.default_weapon_id,
+                ))
+                synced += 1
+
+        # Remove slots that no longer exist in the default loadout
+        for (stype, snum), slot in user_slots.items():
+            if (stype, snum) not in defaults:
+                db.session.delete(slot)
+                synced += 1
+
+    db.session.commit()
+    log(f"  → {synced} user loadout entries synced")
+
+    # ----------------------------------------------------------------
+    # 7. Summary
+    # ----------------------------------------------------------------
+    summary = {
+        "ships": db.session.query(Ship).count(),
+        "components": db.session.query(Component).count(),
+        "weapons": db.session.query(Weapon).count(),
+        "slots": db.session.query(ShipDefaultLoadout).count(),
+    }
+    log(f"\n=== Import complete ===")
+    log(f"  Ships:         {summary['ships']}")
+    log(f"  Components:    {summary['components']}")
+    log(f"  Weapons:       {summary['weapons']}")
+    log(f"  Loadout slots: {summary['slots']}")
+    return summary
 
 
 def run_import(ships_path, items_path):

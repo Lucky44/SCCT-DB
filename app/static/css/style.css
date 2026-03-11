@@ -19,6 +19,14 @@ h1, h2, h3, h4, h5, h6,
   letter-spacing: 0.05em;
 }
 
+/* Sticky table headers */
+.table-sticky thead th {
+  position: sticky;
+  top: 56px; /* navbar height */
+  z-index: 10;
+  background-color: #161b22;
+}
+
 /* Stat card labels — tighter line-height when text wraps */
 .card-body .text-uppercase.small {
   line-height: 1.2;
