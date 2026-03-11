@@ -120,14 +120,30 @@ def add():
         flash("Select a component or weapon to add.", "warning")
         return redirect(url_for("in_storage.index"))
 
-    entry = MyInventory(
-        component_id=int(component_id) if component_id else None,
-        weapon_id=int(weapon_id) if weapon_id else None,
-        quantity=quantity,
-        location=location,
-        notes=notes,
-    )
-    db.session.add(entry)
+    cid = int(component_id) if component_id else None
+    wid = int(weapon_id) if weapon_id else None
+
+    # Upsert: increment existing record rather than creating a duplicate
+    existing = None
+    if cid:
+        existing = MyInventory.query.filter_by(component_id=cid).first()
+    elif wid:
+        existing = MyInventory.query.filter_by(weapon_id=wid).first()
+
+    if existing:
+        existing.quantity += quantity
+        if notes:
+            existing.notes = notes
+    else:
+        entry = MyInventory(
+            component_id=cid,
+            weapon_id=wid,
+            quantity=quantity,
+            location=location,
+            notes=notes,
+        )
+        db.session.add(entry)
+
     db.session.commit()
     flash("Item added to inventory.", "success")
     return redirect(url_for("in_storage.index"))
