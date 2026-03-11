@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request, abort
 from app import db
-from app.models import Component, Weapon, MyShip, MyShipLoadout, MyInventory
+from app.models import Component, Weapon, MyShip, MyShipLoadout, MyInventory, ShipDefaultLoadout
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 
@@ -123,8 +123,66 @@ def equip(slot_id):
     slot = db.session.get(MyShipLoadout, slot_id) or abort(404)
     data = request.get_json(force=True)
 
-    slot.component_id = data.get("component_id")
-    slot.weapon_id = data.get("weapon_id")
+    new_component_id = data.get("component_id")
+    new_weapon_id    = data.get("weapon_id")
+
+    # Inventory check — only when equipping something new (not clearing, not same item)
+    if new_component_id and new_component_id != slot.component_id:
+        count_on_ships = db.session.query(MyShipLoadout).filter_by(component_id=new_component_id).count()
+        inv = db.session.query(MyInventory).filter_by(component_id=new_component_id, weapon_id=None).first()
+        total_owned = inv.quantity if inv else 0
+        if total_owned <= count_on_ships:
+            comp = db.session.get(Component, new_component_id)
+            return jsonify({
+                "status": "no_inventory",
+                "item_type": "component",
+                "item_id": new_component_id,
+                "name": comp.name if comp else "Unknown",
+            })
+
+    elif new_weapon_id and new_weapon_id != slot.weapon_id:
+        count_on_ships = db.session.query(MyShipLoadout).filter_by(weapon_id=new_weapon_id).count()
+        inv = db.session.query(MyInventory).filter_by(weapon_id=new_weapon_id, component_id=None).first()
+        total_owned = inv.quantity if inv else 0
+        if total_owned <= count_on_ships:
+            weap = db.session.get(Weapon, new_weapon_id)
+            return jsonify({
+                "status": "no_inventory",
+                "item_type": "weapon",
+                "item_id": new_weapon_id,
+                "name": weap.name if weap else "Unknown",
+            })
+
+    slot.component_id = new_component_id
+    slot.weapon_id    = new_weapon_id
     db.session.commit()
 
     return jsonify({"ok": True, "slot_id": slot.id})
+
+
+@api_bp.route("/inventory/increment", methods=["POST"])
+def inventory_increment():
+    """Increment (or create) a MyInventory record by 1, then proceed with equip."""
+    data = request.get_json(force=True)
+    component_id = data.get("component_id")
+    weapon_id    = data.get("weapon_id")
+
+    if component_id:
+        inv = db.session.query(MyInventory).filter_by(component_id=component_id, weapon_id=None).first()
+        if inv:
+            inv.quantity += 1
+        else:
+            inv = MyInventory(component_id=component_id, quantity=1)
+            db.session.add(inv)
+    elif weapon_id:
+        inv = db.session.query(MyInventory).filter_by(weapon_id=weapon_id, component_id=None).first()
+        if inv:
+            inv.quantity += 1
+        else:
+            inv = MyInventory(weapon_id=weapon_id, quantity=1)
+            db.session.add(inv)
+    else:
+        return jsonify({"ok": False, "error": "No item specified"}), 400
+
+    db.session.commit()
+    return jsonify({"ok": True, "quantity": inv.quantity})

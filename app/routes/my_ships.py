@@ -1,6 +1,7 @@
+from collections import defaultdict
 from flask import Blueprint, render_template, redirect, url_for, request, flash, abort, jsonify
 from app import db
-from app.models import Ship, MyShip, MyShipLoadout, ShipDefaultLoadout, ShipPowerAllocation, Component, Weapon
+from app.models import Ship, MyShip, MyShipLoadout, ShipDefaultLoadout, ShipPowerAllocation, Component, Weapon, MyInventory
 
 
 def get_power_stats(my_ship):
@@ -278,6 +279,29 @@ def add(ship_id):
             weapon_id=slot.default_weapon_id,
         )
         db.session.add(entry)
+
+    # Auto-populate inventory from default loadout
+    comp_counts = defaultdict(int)
+    weap_counts = defaultdict(int)
+    for slot in ship.default_loadout:
+        if slot.default_component_id:
+            comp_counts[slot.default_component_id] += 1
+        if slot.default_weapon_id:
+            weap_counts[slot.default_weapon_id] += 1
+
+    for comp_id, count in comp_counts.items():
+        inv = db.session.query(MyInventory).filter_by(component_id=comp_id, weapon_id=None).first()
+        if inv:
+            inv.quantity += count
+        else:
+            db.session.add(MyInventory(component_id=comp_id, quantity=count))
+
+    for weap_id, count in weap_counts.items():
+        inv = db.session.query(MyInventory).filter_by(weapon_id=weap_id, component_id=None).first()
+        if inv:
+            inv.quantity += count
+        else:
+            db.session.add(MyInventory(weapon_id=weap_id, quantity=count))
 
     db.session.commit()
     flash(f'"{ship.name}" added to your fleet.', "success")

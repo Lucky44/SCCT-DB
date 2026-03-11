@@ -45,7 +45,8 @@
             <th class="sortable-header" data-sort="size" style="cursor:pointer">Size <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
             <th class="sortable-header" data-sort="grade" style="cursor:pointer">Grade <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
             <th class="sortable-header" data-sort="class" style="cursor:pointer">Class <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
-            <th class="sortable-header" data-sort="qty" style="cursor:pointer">Qty <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
+            <th class="sortable-header" data-sort="qty" style="cursor:pointer">Total Owned <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
+            <th>In Storage</th>
             <th>On Ship</th>
             <th class="sortable-header" data-sort="notes" style="cursor:pointer">Notes <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
             <th></th>
@@ -53,6 +54,9 @@
         </thead>
         <tbody>
           {% for item in comp_list %}
+          {% set ships = comp_on_ship.get(item.component_id, []) %}
+          {% set on_ships_count = ships|length %}
+          {% set in_storage = [item.quantity - on_ships_count, 0]|max %}
           <form id="upd-c-{{ item.id }}" action="{{ url_for('in_storage.update', item_id=item.id) }}" method="post"></form>
           <tr>
             <td class="fw-semibold">{{ item.component.name }}</td>
@@ -61,16 +65,19 @@
             <td class="small class-{{ (item.component.class_ or '')|lower }}">{{ item.component.class_ or '—' }}</td>
             <td>
               <input form="upd-c-{{ item.id }}" type="number" name="quantity"
-                     value="{{ item.quantity }}" min="1"
-                     class="form-control form-control-sm" style="width:65px"
-                     onblur="this.form.submit()">
+                     value="{{ item.quantity }}" min="{{ on_ships_count }}"
+                     class="form-control form-control-sm inv-total-owned" style="width:70px"
+                     data-on-ships="{{ on_ships_count }}"
+                     onblur="this.form.submit()" oninput="updateInStorage(this)">
+            </td>
+            <td class="small inv-in-storage {% if in_storage == 0 %}text-danger{% else %}text-success{% endif %}">
+              {{ in_storage }}
             </td>
             <td class="small">
-              {% set ships = comp_on_ship.get(item.component_id, []) %}
               {% if ships %}
                 <span class="text-warning">{{ ships|join(', ') }}</span>
               {% else %}
-                <span class="text-muted">storage</span>
+                <span class="text-muted">—</span>
               {% endif %}
             </td>
             <td class="small text-muted">{{ item.notes or '' }}
@@ -107,7 +114,8 @@
             <th class="sortable-header" data-sort="size" style="cursor:pointer">Size <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
             <th class="sortable-header" data-sort="grade" style="cursor:pointer">Grade <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
             <th class="sortable-header" data-sort="class" style="cursor:pointer">Class <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
-            <th class="sortable-header" data-sort="qty" style="cursor:pointer">Qty <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
+            <th class="sortable-header" data-sort="qty" style="cursor:pointer">Total Owned <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
+            <th>In Storage</th>
             <th>On Ship</th>
             <th class="sortable-header" data-sort="notes" style="cursor:pointer">Notes <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
             <th></th>
@@ -115,6 +123,9 @@
         </thead>
         <tbody>
           {% for item in comp_list %}
+          {% set ships = comp_on_ship.get(item.component_id, []) %}
+          {% set on_ships_count = ships|length %}
+          {% set in_storage = [item.quantity - on_ships_count, 0]|max %}
           <form id="upd-c-{{ item.id }}" action="{{ url_for('in_storage.update', item_id=item.id) }}" method="post"></form>
           <tr>
             <td class="fw-semibold">{{ item.component.name }}</td>
@@ -123,16 +134,19 @@
             <td class="small class-{{ (item.component.class_ or '')|lower }}">{{ item.component.class_ or '—' }}</td>
             <td>
               <input form="upd-c-{{ item.id }}" type="number" name="quantity"
-                     value="{{ item.quantity }}" min="1"
-                     class="form-control form-control-sm" style="width:65px"
-                     onblur="this.form.submit()">
+                     value="{{ item.quantity }}" min="{{ on_ships_count }}"
+                     class="form-control form-control-sm inv-total-owned" style="width:70px"
+                     data-on-ships="{{ on_ships_count }}"
+                     onblur="this.form.submit()" oninput="updateInStorage(this)">
+            </td>
+            <td class="small inv-in-storage {% if in_storage == 0 %}text-danger{% else %}text-success{% endif %}">
+              {{ in_storage }}
             </td>
             <td class="small">
-              {% set ships = comp_on_ship.get(item.component_id, []) %}
               {% if ships %}
                 <span class="text-warning">{{ ships|join(', ') }}</span>
               {% else %}
-                <span class="text-muted">storage</span>
+                <span class="text-muted">—</span>
               {% endif %}
             </td>
             <td class="small text-muted">{{ item.notes or '' }}
@@ -169,7 +183,8 @@
             <th class="sortable-header" data-sort="size" style="cursor:pointer">Size <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
             <th class="sortable-header" data-sort="grade" style="cursor:pointer">Grade <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
             <th class="sortable-header" data-sort="class" style="cursor:pointer">Class <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
-            <th class="sortable-header" data-sort="qty" style="cursor:pointer">Qty <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
+            <th class="sortable-header" data-sort="qty" style="cursor:pointer">Total Owned <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
+            <th>In Storage</th>
             <th>On Ship</th>
             <th class="sortable-header" data-sort="notes" style="cursor:pointer">Notes <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
             <th></th>
@@ -177,6 +192,9 @@
         </thead>
         <tbody>
           {% for item in comp_list %}
+          {% set ships = comp_on_ship.get(item.component_id, []) %}
+          {% set on_ships_count = ships|length %}
+          {% set in_storage = [item.quantity - on_ships_count, 0]|max %}
           <form id="upd-c-{{ item.id }}" action="{{ url_for('in_storage.update', item_id=item.id) }}" method="post"></form>
           <tr>
             <td class="fw-semibold">{{ item.component.name }}</td>
@@ -185,16 +203,19 @@
             <td class="small class-{{ (item.component.class_ or '')|lower }}">{{ item.component.class_ or '—' }}</td>
             <td>
               <input form="upd-c-{{ item.id }}" type="number" name="quantity"
-                     value="{{ item.quantity }}" min="1"
-                     class="form-control form-control-sm" style="width:65px"
-                     onblur="this.form.submit()">
+                     value="{{ item.quantity }}" min="{{ on_ships_count }}"
+                     class="form-control form-control-sm inv-total-owned" style="width:70px"
+                     data-on-ships="{{ on_ships_count }}"
+                     onblur="this.form.submit()" oninput="updateInStorage(this)">
+            </td>
+            <td class="small inv-in-storage {% if in_storage == 0 %}text-danger{% else %}text-success{% endif %}">
+              {{ in_storage }}
             </td>
             <td class="small">
-              {% set ships = comp_on_ship.get(item.component_id, []) %}
               {% if ships %}
                 <span class="text-warning">{{ ships|join(', ') }}</span>
               {% else %}
-                <span class="text-muted">storage</span>
+                <span class="text-muted">—</span>
               {% endif %}
             </td>
             <td class="small text-muted">{{ item.notes or '' }}
@@ -231,7 +252,8 @@
             <th class="sortable-header" data-sort="size" style="cursor:pointer">Size <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
             <th class="sortable-header" data-sort="grade" style="cursor:pointer">Grade <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
             <th class="sortable-header" data-sort="class" style="cursor:pointer">Class <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
-            <th class="sortable-header" data-sort="qty" style="cursor:pointer">Qty <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
+            <th class="sortable-header" data-sort="qty" style="cursor:pointer">Total Owned <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
+            <th>In Storage</th>
             <th>On Ship</th>
             <th class="sortable-header" data-sort="notes" style="cursor:pointer">Notes <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
             <th></th>
@@ -239,6 +261,9 @@
         </thead>
         <tbody>
           {% for item in comp_list %}
+          {% set ships = comp_on_ship.get(item.component_id, []) %}
+          {% set on_ships_count = ships|length %}
+          {% set in_storage = [item.quantity - on_ships_count, 0]|max %}
           <form id="upd-c-{{ item.id }}" action="{{ url_for('in_storage.update', item_id=item.id) }}" method="post"></form>
           <tr>
             <td class="fw-semibold">{{ item.component.name }}</td>
@@ -247,16 +272,19 @@
             <td class="small class-{{ (item.component.class_ or '')|lower }}">{{ item.component.class_ or '—' }}</td>
             <td>
               <input form="upd-c-{{ item.id }}" type="number" name="quantity"
-                     value="{{ item.quantity }}" min="1"
-                     class="form-control form-control-sm" style="width:65px"
-                     onblur="this.form.submit()">
+                     value="{{ item.quantity }}" min="{{ on_ships_count }}"
+                     class="form-control form-control-sm inv-total-owned" style="width:70px"
+                     data-on-ships="{{ on_ships_count }}"
+                     onblur="this.form.submit()" oninput="updateInStorage(this)">
+            </td>
+            <td class="small inv-in-storage {% if in_storage == 0 %}text-danger{% else %}text-success{% endif %}">
+              {{ in_storage }}
             </td>
             <td class="small">
-              {% set ships = comp_on_ship.get(item.component_id, []) %}
               {% if ships %}
                 <span class="text-warning">{{ ships|join(', ') }}</span>
               {% else %}
-                <span class="text-muted">storage</span>
+                <span class="text-muted">—</span>
               {% endif %}
             </td>
             <td class="small text-muted">{{ item.notes or '' }}
@@ -291,8 +319,8 @@
             <th class="sortable-header" data-sort="name" style="cursor:pointer">Name <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
             <th class="sortable-header" data-sort="type" style="cursor:pointer">Type <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
             <th class="sortable-header" data-sort="size" style="cursor:pointer">Size <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
-            <th class="sortable-header" data-sort="qty" style="cursor:pointer">Qty <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
-            <th class="sortable-header" data-sort="location" style="cursor:pointer">Location <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
+            <th class="sortable-header" data-sort="qty" style="cursor:pointer">Total Owned <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
+            <th>In Storage</th>
             <th>On Ship</th>
             <th class="sortable-header" data-sort="notes" style="cursor:pointer">Notes <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
             <th></th>
@@ -300,6 +328,9 @@
         </thead>
         <tbody>
           {% for item in weapons %}
+          {% set ships = weap_on_ship.get(item.weapon_id, []) %}
+          {% set on_ships_count = ships|length %}
+          {% set in_storage = [item.quantity - on_ships_count, 0]|max %}
           <form id="upd-w-{{ item.id }}" action="{{ url_for('in_storage.update', item_id=item.id) }}" method="post"></form>
           <tr>
             <td class="fw-semibold">{{ item.weapon.name }}</td>
@@ -307,22 +338,20 @@
             <td><span class="badge bg-dark border">S{{ item.weapon.size }}</span></td>
             <td>
               <input form="upd-w-{{ item.id }}" type="number" name="quantity"
-                     value="{{ item.quantity }}" min="1"
-                     class="form-control form-control-sm" style="width:65px"
-                     onblur="this.form.submit()">
-            </td>
-            <td>
-              <input form="upd-w-{{ item.id }}" type="text" name="location"
-                     value="{{ item.location }}"
-                     class="form-control form-control-sm" style="width:100px" placeholder="location">
+                     value="{{ item.quantity }}" min="{{ on_ships_count }}"
+                     class="form-control form-control-sm inv-total-owned" style="width:70px"
+                     data-on-ships="{{ on_ships_count }}"
+                     onblur="this.form.submit()" oninput="updateInStorage(this)">
               <input form="upd-w-{{ item.id }}" type="hidden" name="notes" value="{{ item.notes or '' }}">
             </td>
+            <td class="small inv-in-storage {% if in_storage == 0 %}text-danger{% else %}text-success{% endif %}">
+              {{ in_storage }}
+            </td>
             <td class="small">
-              {% set ships = weap_on_ship.get(item.weapon_id, []) %}
               {% if ships %}
                 <span class="text-warning">{{ ships|join(', ') }}</span>
               {% else %}
-                <span class="text-muted">storage</span>
+                <span class="text-muted">—</span>
               {% endif %}
             </td>
             <td class="small text-muted">{{ item.notes or '' }}</td>
@@ -498,6 +527,22 @@
 
 {% block scripts %}
 <script>
+// Update In Storage cell live as Total Owned spinner changes
+function updateInStorage(input) {
+  const onShips = parseInt(input.dataset.onShips) || 0;
+  const total   = parseInt(input.value) || 0;
+  const inStore = Math.max(0, total - onShips);
+  const cell    = input.closest('tr').querySelector('.inv-in-storage');
+  if (!cell) return;
+  cell.textContent = inStore;
+  cell.className = 'small inv-in-storage ' + (inStore === 0 ? 'text-danger' : 'text-success');
+}
+
+// Refresh when the tab becomes visible again (catches equip changes from ship detail page)
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') location.reload();
+});
+
 // Remember active inventory tab across page reloads/redirects
 const TAB_KEY = "inv-active-tab";
 const tabs = document.querySelectorAll("#invTabs button[data-bs-toggle='tab']");

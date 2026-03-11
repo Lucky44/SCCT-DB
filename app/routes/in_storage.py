@@ -60,6 +60,21 @@ def index():
 
     comp_on_ship, weap_on_ship = _on_ship_maps()
 
+    # Auto-correct any Total Owned values that are below the on-ships count
+    needs_commit = False
+    for item in all_user_components:
+        on_ships = len(comp_on_ship.get(item.component_id, []))
+        if item.quantity < on_ships:
+            item.quantity = on_ships
+            needs_commit = True
+    for item in weapons:
+        on_ships = len(weap_on_ship.get(item.weapon_id, []))
+        if item.quantity < on_ships:
+            item.quantity = on_ships
+            needs_commit = True
+    if needs_commit:
+        db.session.commit()
+
     # All reference components/weapons for the add-item dropdowns, grouped by type
     all_components = (
         db.session.query(Component)
@@ -121,9 +136,8 @@ def add():
 @in_storage_bp.route("/<int:item_id>/update", methods=["POST"])
 def update(item_id):
     item = db.session.get(MyInventory, item_id) or abort(404)
-    qty = request.form.get("quantity", "1")
-    item.quantity = max(1, int(qty)) if qty.isdigit() else 1
-    item.location = request.form.get("location", "storage").strip()
+    qty = request.form.get("quantity", "0")
+    item.quantity = max(0, int(qty)) if qty.isdigit() else 0
     item.notes = request.form.get("notes", "").strip() or None
     db.session.commit()
     flash("Inventory updated.", "success")

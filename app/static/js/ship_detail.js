@@ -8,8 +8,10 @@ let sortColIdx      = -1;
 let sortAsc         = true;
 let selectedIds     = new Set();
 
-const pickerModal = new bootstrap.Modal(document.getElementById("pickerModal"));
-const statsModal  = new bootstrap.Modal(document.getElementById("statsModal"));
+const pickerModal        = new bootstrap.Modal(document.getElementById("pickerModal"));
+const statsModal         = new bootstrap.Modal(document.getElementById("statsModal"));
+const invWarningModal    = new bootstrap.Modal(document.getElementById("inventoryWarningModal"));
+let pendingEquipArgs     = null;  // { componentId, weaponId } waiting on inventory confirm
 
 // ── Picker column definitions ─────────────────────────────────────────────
 
@@ -219,12 +221,42 @@ async function openPicker(slotId, slotType, slotSize) {
 
 async function equipItem(componentId, weaponId) {
   if (currentSlotId === null) return;
-  await fetch(`/api/loadout/${currentSlotId}/equip`, {
+  const res  = await fetch(`/api/loadout/${currentSlotId}/equip`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ component_id: componentId || null, weapon_id: weaponId || null }),
   });
+  const data = await res.json();
+
+  if (data.status === "no_inventory") {
+    pendingEquipArgs = { componentId, weaponId };
+    document.getElementById("invWarnItemName").textContent = data.name;
+    // Wire up the increase button with the correct item ids
+    const btn = document.getElementById("invWarnIncrease");
+    btn.onclick = () => confirmEquipWithIncrease(data.item_type, data.item_id, componentId, weaponId);
+    pickerModal.hide();
+    invWarningModal.show();
+    return;
+  }
+
   pickerModal.hide();
+  location.reload();
+}
+
+async function confirmEquipWithIncrease(itemType, itemId, componentId, weaponId) {
+  invWarningModal.hide();
+  const payload = itemType === "component" ? { component_id: itemId } : { weapon_id: itemId };
+  await fetch("/api/inventory/increment", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  // Retry equip — inventory now has room
+  const res  = await fetch(`/api/loadout/${currentSlotId}/equip`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ component_id: componentId || null, weapon_id: weaponId || null }),
+  });
   location.reload();
 }
 

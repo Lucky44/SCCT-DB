@@ -383,6 +383,26 @@
     </div>
   </div>
 </div>
+
+<!-- Inventory warning modal -->
+<div class="modal fade" id="inventoryWarningModal" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content border-warning">
+      <div class="modal-header bg-warning text-dark">
+        <h5 class="modal-title"><i class="bi bi-exclamation-triangle-fill me-2"></i>None in Storage</h5>
+      </div>
+      <div class="modal-body">
+        <p class="mb-3">You have no <strong id="invWarnItemName"></strong> in storage. What would you like to do?</p>
+        <div class="d-grid gap-2">
+          <button class="btn btn-success" id="invWarnIncrease">
+            <i class="bi bi-plus-circle me-1"></i>Increase Total Owned &amp; Equip
+          </button>
+          <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
