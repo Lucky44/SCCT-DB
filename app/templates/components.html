@@ -61,17 +61,34 @@
 </form>
 
 {% if components %}
+<!-- Compare bar -->
+<div id="compareBar" class="d-none mb-3">
+  <button class="btn btn-sm btn-warning" onclick="showComparison()">
+    <i class="bi bi-layout-split me-1"></i> Compare <span id="compareCount">0</span> Selected
+  </button>
+  <button class="btn btn-sm btn-outline-secondary ms-2" onclick="clearCompare()">Clear</button>
+</div>
+
 <div class="table-responsive">
   <table class="table table-hover align-middle">
     <thead class="table-dark">
       <tr>
+        <th style="width:1.5rem;"></th>
         <th>Name</th><th>Type</th><th>Size</th><th>Grade</th><th>Class</th><th>Manufacturer</th>
       </tr>
     </thead>
     <tbody>
       {% for c in components %}
       <tr>
-        <td class="fw-semibold">{{ c.name }}</td>
+        <td>
+          <input type="checkbox" class="form-check-input compare-cb" value="{{ c.id }}"
+                 data-type="{{ c.component_type }}" onchange="updateCompareBar()">
+        </td>
+        <td class="fw-semibold">
+          {{ c.name }}
+          <button class="btn btn-sm ms-2 py-0 px-1" style="font-size:0.7rem; color:#c9a84c; border-color:#c9a84c;"
+                  onclick="showComponentStats({{ c.id }})">Stats</button>
+        </td>
         <td class="text-muted small text-capitalize">{{ c.component_type.replace('_',' ') if c.component_type else '—' }}</td>
         <td><span class="badge bg-dark border">S{{ c.size }}</span></td>
         <td><span class="badge badge-grade-{{ c.grade }}">{{ c.grade or '—' }}</span></td>
@@ -88,4 +105,164 @@
   <p>No components match your filters.</p>
 </div>
 {% endif %}
+
+<!-- Stats Modal -->
+<div class="modal fade" id="componentStatsModal" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header py-2">
+        <h6 class="modal-title mb-0" id="componentStatsName">—</h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-2" id="componentStatsBody">
+        <div class="text-center text-muted py-3"><span class="spinner-border spinner-border-sm"></span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Compare Modal -->
+<div class="modal fade" id="compareModal" tabindex="-1">
+  <div class="modal-dialog" id="compareDialog">
+    <div class="modal-content">
+      <div class="modal-header py-2">
+        <h6 class="modal-title mb-0"><i class="bi bi-layout-split me-2"></i>Component Comparison</h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-2" id="compareBody">
+        <div class="text-center text-muted py-3"><span class="spinner-border spinner-border-sm"></span></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const STAT_ROWS = {
+  cooler: [
+    ['Grade',            c => c.grade || '—'],
+    ['Class',            c => c.class || '—'],
+    ['Manufacturer',     c => c.manufacturer || '—'],
+    ['Cooling',          c => fmt(c.stats?.cooling_generation)],
+    ['Power Pips (max)', c => fmt(c.stats?.power_pips_max)],
+    ['EM Signature',     c => fmt(c.stats?.em_signature)],
+    ['IR Signature',     c => fmt(c.stats?.ir_signature)],
+    ['Health',           c => fmt(c.stats?.health)],
+  ],
+  power_plant: [
+    ['Grade',            c => c.grade || '—'],
+    ['Class',            c => c.class || '—'],
+    ['Manufacturer',     c => c.manufacturer || '—'],
+    ['Power Output',     c => fmt(c.stats?.power_generation)],
+    ['EM Max',           c => fmt(c.stats?.em_max)],
+    ['Health',           c => fmt(c.stats?.health)],
+  ],
+  shield_generator: [
+    ['Grade',            c => c.grade || '—'],
+    ['Class',            c => c.class || '—'],
+    ['Manufacturer',     c => c.manufacturer || '—'],
+    ['Shield HP',        c => fmt(c.stats?.shield_hp)],
+    ['Regen / s',        c => fmt(c.stats?.shield_regen)],
+    ['Regen Delay (dmg)',c => c.stats?.regen_delay_damaged != null ? `${c.stats.regen_delay_damaged}s` : '—'],
+    ['Regen Delay (dwn)',c => c.stats?.regen_delay_downed != null ? `${c.stats.regen_delay_downed}s` : '—'],
+    ['Power Pips (max)', c => fmt(c.stats?.power_pips_max)],
+    ['EM Signature',     c => fmt(c.stats?.em_signature)],
+    ['Health',           c => fmt(c.stats?.health)],
+  ],
+  quantum_drive: [
+    ['Grade',            c => c.grade || '—'],
+    ['Class',            c => c.class || '—'],
+    ['Manufacturer',     c => c.manufacturer || '—'],
+    ['Drive Speed',      c => c.stats?.drive_speed != null ? `${(c.stats.drive_speed/1e6).toFixed(0)}Mm/s` : '—'],
+    ['Spool Time',       c => c.stats?.spool_time != null ? `${c.stats.spool_time}s` : '—'],
+    ['Cooldown',         c => c.stats?.cooldown != null ? `${c.stats.cooldown}s` : '—'],
+    ['Fuel / Gm',        c => fmt(c.stats?.fuel_requirement)],
+    ['Power Pips (max)', c => fmt(c.stats?.power_pips_max)],
+    ['Health',           c => fmt(c.stats?.health)],
+  ],
+};
+
+const DEFAULT_ROWS = [
+  ['Grade',        c => c.grade || '—'],
+  ['Class',        c => c.class || '—'],
+  ['Manufacturer', c => c.manufacturer || '—'],
+];
+
+function fmt(v) { return v == null ? '—' : v; }
+
+function getRows(type) {
+  return STAT_ROWS[type] || DEFAULT_ROWS;
+}
+
+function showComponentStats(id) {
+  const modal = new bootstrap.Modal(document.getElementById('componentStatsModal'));
+  document.getElementById('componentStatsName').textContent = '—';
+  document.getElementById('componentStatsBody').innerHTML = '<div class="text-center text-muted py-3"><span class="spinner-border spinner-border-sm"></span></div>';
+  modal.show();
+
+  fetch(`/api/component/${id}`)
+    .then(r => r.json())
+    .then(c => {
+      document.getElementById('componentStatsName').textContent = `${c.name} — S${c.size}`;
+      const rows = getRows(c.type);
+      document.getElementById('componentStatsBody').innerHTML = `
+        <table class="table table-sm mb-0" style="font-size:0.8rem;">
+          <tbody>
+            ${rows.map(([label, fn]) => `
+              <tr>
+                <td class="text-muted pe-3">${label}</td>
+                <td class="text-end fw-semibold">${fn(c)}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>`;
+    });
+}
+
+function updateCompareBar() {
+  const checked = document.querySelectorAll('.compare-cb:checked');
+  const count = checked.length;
+  document.getElementById('compareCount').textContent = count;
+  document.getElementById('compareBar').classList.toggle('d-none', count < 2);
+}
+
+function clearCompare() {
+  document.querySelectorAll('.compare-cb:checked').forEach(cb => cb.checked = false);
+  updateCompareBar();
+}
+
+function showComparison() {
+  const ids = [...document.querySelectorAll('.compare-cb:checked')].map(cb => cb.value);
+  const sizeClass = ids.length <= 2 ? '' : ids.length === 3 ? 'modal-lg' : 'modal-xl';
+  document.getElementById('compareDialog').className = `modal-dialog ${sizeClass}`;
+  const modal = new bootstrap.Modal(document.getElementById('compareModal'));
+  document.getElementById('compareBody').innerHTML = '<div class="text-center text-muted py-3"><span class="spinner-border spinner-border-sm"></span></div>';
+  modal.show();
+
+  Promise.all(ids.map(id => fetch(`/api/component/${id}`).then(r => r.json())))
+    .then(comps => {
+      const type = comps[0].type;
+      const rows = getRows(type);
+      const headerCells = comps.map(c =>
+        `<th class="text-center">${c.name}<br><span class="badge bg-dark border">S${c.size}</span></th>`
+      ).join('');
+      const bodyRows = rows.map(([label, fn]) => {
+        const vals = comps.map(c => fn(c));
+        const nums = vals.map(v => parseFloat(v));
+        const maxNum = Math.max(...nums.filter(n => !isNaN(n)));
+        const cells = vals.map((v, i) => {
+          const isTop = !isNaN(nums[i]) && nums[i] === maxNum && nums.filter(n => n === maxNum).length < comps.length;
+          return `<td class="text-center ${isTop ? 'text-warning fw-bold' : ''}">${v}</td>`;
+        }).join('');
+        return `<tr><td class="text-muted">${label}</td>${cells}</tr>`;
+      }).join('');
+
+      document.getElementById('compareBody').innerHTML = `
+        <table class="table table-sm mb-0" style="font-size:0.85rem;">
+          <thead class="table-dark"><tr><th></th>${headerCells}</tr></thead>
+          <tbody>${bodyRows}</tbody>
+        </table>`;
+    });
+}
+</script>
 {% endblock %}

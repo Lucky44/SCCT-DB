@@ -45,17 +45,34 @@
 </form>
 
 {% if weapons %}
+<!-- Compare bar (hidden until 2+ selected) -->
+<div id="compareBar" class="d-none mb-3">
+  <button class="btn btn-sm btn-warning" onclick="showComparison()">
+    <i class="bi bi-layout-split me-1"></i> Compare <span id="compareCount">0</span> Selected
+  </button>
+  <button class="btn btn-sm btn-outline-secondary ms-2" onclick="clearCompare()">Clear</button>
+</div>
+
 <div class="table-responsive">
   <table class="table table-hover align-middle">
     <thead class="table-dark">
       <tr>
+        <th style="width:1.5rem;"></th>
         <th>Name</th><th>Type</th><th>Size</th><th>Mount</th><th>Manufacturer</th>
       </tr>
     </thead>
     <tbody>
       {% for w in weapons %}
       <tr>
-        <td class="fw-semibold">{{ w.name }}</td>
+        <td>
+          <input type="checkbox" class="form-check-input compare-cb" value="{{ w.id }}"
+                 onchange="updateCompareBar()">
+        </td>
+        <td class="fw-semibold">
+          {{ w.name }}
+          <button class="btn btn-sm ms-2 py-0 px-1" style="font-size:0.7rem; color:#c9a84c; border-color:#c9a84c;"
+                  onclick="showWeaponStats({{ w.id }})">Stats</button>
+        </td>
         <td class="text-muted small text-capitalize">{{ w.weapon_type or '—' }}</td>
         <td><span class="badge bg-dark border">S{{ w.size }}</span></td>
         <td class="small text-muted text-capitalize">{{ w.mount_type or '—' }}</td>
@@ -71,4 +88,120 @@
   <p>No weapons match your filters.</p>
 </div>
 {% endif %}
+
+<!-- Weapon Stats Modal -->
+<div class="modal fade" id="weaponStatsModal" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header py-2">
+        <h6 class="modal-title mb-0" id="weaponStatsName">—</h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-2" id="weaponStatsBody">
+        <div class="text-center text-muted py-3"><span class="spinner-border spinner-border-sm"></span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Compare Modal -->
+<div class="modal fade" id="compareModal" tabindex="-1">
+  <div class="modal-dialog" id="compareDialog">
+    <div class="modal-content">
+      <div class="modal-header py-2">
+        <h6 class="modal-title mb-0"><i class="bi bi-layout-split me-2"></i>Weapon Comparison</h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-2" id="compareBody">
+        <div class="text-center text-muted py-3"><span class="spinner-border spinner-border-sm"></span></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const STAT_ROWS = [
+  ['Type',          w => (w.type || '—').replace(/_/g, ' ')],
+  ['Mount',         w => w.mount_type || '—'],
+  ['Manufacturer',  w => w.manufacturer || '—'],
+  ['DPS',           w => fmt(w.stats?.dps)],
+  ['Sustained DPS', w => fmt(w.stats?.dps_sustained)],
+  ['Dmg / Shot',    w => fmt(w.stats?.damage_per_shot)],
+  ['Fire Rate',     w => w.stats?.fire_rate != null ? `${w.stats.fire_rate} rpm` : '—'],
+  ['Ammo',          w => fmt(w.stats?.ammo_count)],
+  ['Range',         w => w.stats?.range != null ? `${w.stats.range} m` : '—'],
+  ['Proj. Speed',   w => w.stats?.speed != null ? `${w.stats.speed} m/s` : '—'],
+  ['Power Pips',    w => fmt(w.stats?.power_pips_max)],
+];
+
+function fmt(v) { return v == null ? '—' : v; }
+
+function showWeaponStats(id) {
+  const modal = new bootstrap.Modal(document.getElementById('weaponStatsModal'));
+  document.getElementById('weaponStatsName').textContent = '—';
+  document.getElementById('weaponStatsBody').innerHTML = '<div class="text-center text-muted py-3"><span class="spinner-border spinner-border-sm"></span></div>';
+  modal.show();
+
+  fetch(`/api/weapon/${id}`)
+    .then(r => r.json())
+    .then(w => {
+      document.getElementById('weaponStatsName').textContent = w.name;
+      document.getElementById('weaponStatsBody').innerHTML = `
+        <table class="table table-sm mb-0" style="font-size:0.8rem;">
+          <tbody>
+            ${STAT_ROWS.map(([label, fn]) => `
+              <tr>
+                <td class="text-muted pe-3">${label}</td>
+                <td class="text-end fw-semibold">${fn(w)}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>`;
+    });
+}
+
+function updateCompareBar() {
+  const count = document.querySelectorAll('.compare-cb:checked').length;
+  const bar = document.getElementById('compareBar');
+  document.getElementById('compareCount').textContent = count;
+  bar.classList.toggle('d-none', count < 2);
+}
+
+function clearCompare() {
+  document.querySelectorAll('.compare-cb:checked').forEach(cb => cb.checked = false);
+  updateCompareBar();
+}
+
+function showComparison() {
+  const ids = [...document.querySelectorAll('.compare-cb:checked')].map(cb => cb.value);
+  const sizeClass = ids.length <= 2 ? '' : ids.length === 3 ? 'modal-lg' : 'modal-xl';
+  document.getElementById('compareDialog').className = `modal-dialog ${sizeClass}`;
+  const modal = new bootstrap.Modal(document.getElementById('compareModal'));
+  document.getElementById('compareBody').innerHTML = '<div class="text-center text-muted py-3"><span class="spinner-border spinner-border-sm"></span></div>';
+  modal.show();
+
+  Promise.all(ids.map(id => fetch(`/api/weapon/${id}`).then(r => r.json())))
+    .then(weapons => {
+      const headerCells = weapons.map(w => `<th class="text-center">${w.name}<br><span class="badge bg-dark border">S${w.size}</span></th>`).join('');
+      const bodyRows = STAT_ROWS.map(([label, fn]) => {
+        const vals = weapons.map(w => fn(w));
+        // highlight numeric best values (highest)
+        const nums = vals.map(v => parseFloat(v));
+        const maxNum = Math.max(...nums.filter(n => !isNaN(n)));
+        const cells = vals.map((v, i) => {
+          const isTop = !isNaN(nums[i]) && nums[i] === maxNum && nums.filter(n => n === maxNum).length < weapons.length;
+          return `<td class="text-center ${isTop ? 'text-warning fw-bold' : ''}">${v}</td>`;
+        }).join('');
+        return `<tr><td class="text-muted">${label}</td>${cells}</tr>`;
+      }).join('');
+
+      document.getElementById('compareBody').innerHTML = `
+        <table class="table table-sm mb-0" style="font-size:0.85rem;">
+          <thead class="table-dark"><tr><th></th>${headerCells}</tr></thead>
+          <tbody>${bodyRows}</tbody>
+        </table>`;
+    });
+}
+</script>
 {% endblock %}
