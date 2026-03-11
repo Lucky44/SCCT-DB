@@ -10,6 +10,10 @@ migrate = Migrate()
 
 
 def create_app():
+
+    from config import USER_DATA_DIR
+    os.makedirs(USER_DATA_DIR, exist_ok=True)
+
     app = Flask(__name__, instance_relative_config=False)
     app.config.from_object("config.Config")
 
