@@ -1,0 +1,8 @@
+{
+  "_readme": "Manual corrections for ship stat fields that are wrong in the scunpacked source data. Applied after each import. Keys must match the ship name exactly as it appears in ships.json (with manufacturer prefix).",
+
+  "Crusader C2 Hercules Starlifter": {
+    "note": "scunpacked reports 1434 SCU; correct value is 696 SCU",
+    "cargo_scu": 696
+  }
+}

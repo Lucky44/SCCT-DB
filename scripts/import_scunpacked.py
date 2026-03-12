@@ -47,6 +47,7 @@ def _find_json(filename):
 DEFAULT_SHIPS_JSON = _find_json("ships.json")
 DEFAULT_ITEMS_JSON = _find_json("ship-items.json")
 DEFAULT_OVERRIDES_JSON = _find_json("ship_slot_overrides.json")
+DEFAULT_DATA_OVERRIDES_JSON = _find_json("ship_data_overrides.json")
 
 # Types we care about as components (non-weapon ship equipment)
 COMPONENT_TYPES = {"PowerPlant", "Cooler", "Shield", "QuantumDrive"}
@@ -603,11 +604,19 @@ def do_import(ships_path, items_path, log=print):
                 if class_name and class_name in weapon_by_class:
                     default_weapon_id = weapon_by_class[class_name].id
 
+            # If scunpacked reports slot_size=0 but we know the default component,
+            # infer the slot size from the component (skips S0 bespoke components).
+            raw_size = entry.get("MaxSize") or 0
+            if raw_size == 0 and default_component_id:
+                comp_obj = component_by_class.get(class_name)
+                if comp_obj and comp_obj.size:
+                    raw_size = comp_obj.size
+
             db.session.add(ShipDefaultLoadout(
                 ship_id=ship.id,
                 slot_type=db_slot_type,
                 slot_number=slot_number,
-                slot_size=entry.get("MaxSize"),
+                slot_size=raw_size,
                 default_component_id=default_component_id,
                 default_weapon_id=default_weapon_id,
                 mount_type="pilot" if db_slot_type == "weapon" else None,
@@ -650,8 +659,55 @@ def do_import(ships_path, items_path, log=print):
                 ))
                 slot_count += 1
 
+            # modify_slots: patch attributes of existing slots by slot_type+slot_number
+            for patch in override.get("modify_slots", []):
+                target = db.session.query(ShipDefaultLoadout).filter_by(
+                    ship_id=ship.id,
+                    slot_type=patch["slot_type"],
+                    slot_number=patch["slot_number"],
+                ).first()
+                if target:
+                    if "slot_size" in patch:
+                        target.slot_size = patch["slot_size"]
+                    if "default_component" in patch:
+                        new_size = patch.get("slot_size") or target.slot_size
+                        matched = next(
+                            (c for key, c in component_seen.items()
+                             if key[0] == patch["default_component"] and key[1] == patch["slot_type"] and key[2] == new_size),
+                            None
+                        )
+                        target.default_component_id = matched.id if matched else None
+
+            # delete_slots: remove spurious slots created by scunpacked data
+            for patch in override.get("delete_slots", []):
+                target = db.session.query(ShipDefaultLoadout).filter_by(
+                    ship_id=ship.id,
+                    slot_type=patch["slot_type"],
+                    slot_number=patch["slot_number"],
+                ).first()
+                if target:
+                    db.session.delete(target)
+
     db.session.commit()
     log(f"  → {ship_count} ships, {slot_count} loadout slots")
+
+    # ----------------------------------------------------------------
+    # 5b. Apply ship data overrides (stat corrections)
+    # ----------------------------------------------------------------
+    data_overrides_path = DEFAULT_DATA_OVERRIDES_JSON
+    if os.path.exists(data_overrides_path):
+        with open(data_overrides_path, encoding="utf-8") as f:
+            raw_data_overrides = json.load(f)
+        ship_data_overrides = {k: v for k, v in raw_data_overrides.items() if not k.startswith("_")}
+        for ship_name, patches in ship_data_overrides.items():
+            ship = db.session.query(Ship).filter_by(name=ship_name).first()
+            if ship:
+                for field, value in patches.items():
+                    if field == "note":
+                        continue
+                    if hasattr(ship, field):
+                        setattr(ship, field, value)
+        db.session.commit()
 
     # ----------------------------------------------------------------
     # 6. Sync existing user loadouts to updated reference data

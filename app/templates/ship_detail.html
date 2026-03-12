@@ -133,16 +133,7 @@
                {% if has_item and my_slot.component %}data-component-id="{{ my_slot.component.id }}"
                {% elif has_item and my_slot.weapon %}data-weapon-id="{{ my_slot.weapon.id }}"{% endif %}>
             <div class="card-body p-2">
-              <div class="d-flex justify-content-between align-items-center mb-1">
-                <span class="badge bg-dark border">S{{ slot.slot_size }}</span>
-                {% if my_slot %}
-                <button class="btn btn-link btn-sm p-0 text-secondary"
-                        onclick="openPicker({{ my_slot.id }}, '{{ slot.slot_type }}', {{ slot.slot_size }})">
-                  <i class="bi bi-pencil"></i>
-                </button>
-                {% endif %}
-              </div>
-              <div class="small fw-semibold mt-1"
+              <div class="small fw-semibold mb-1"
                    id="slot-equipped-{{ my_slot.id if my_slot else 'none-' + loop.index|string }}">
                 {% if has_item %}
                   {% if my_slot.component %}{{ my_slot.component.name }}
@@ -150,6 +141,21 @@
                   {% endif %}
                 {% else %}
                   <span class="text-muted fst-italic">EMPTY</span>
+                {% endif %}
+              </div>
+              <div class="d-flex justify-content-between align-items-center">
+                <span class="badge bg-dark border">S{{ slot.slot_size }}</span>
+                {% if has_item %}
+                <button class="btn btn-outline-secondary py-0 px-1" style="font-size:.6rem;letter-spacing:.05em;min-width:3rem;"
+                        onclick="showStatsModal({% if my_slot.component %}{{ my_slot.component.id }}, null{% else %}null, {{ my_slot.weapon.id }}{% endif %})">
+                  DETAILS
+                </button>
+                {% endif %}
+                {% if my_slot %}
+                <button class="btn btn-link btn-sm p-0 text-secondary"
+                        onclick="openPicker({{ my_slot.id }}, '{{ slot.slot_type }}', {{ slot.slot_size }})">
+                  <i class="bi bi-pencil"></i>
+                </button>
                 {% endif %}
               </div>
             </div>
@@ -183,18 +189,24 @@
              id="slot-card-{{ my_slot.id if my_slot else 'none-w-' + loop.index|string }}"
              {% if has_item %}data-weapon-id="{{ my_slot.weapon.id }}"{% endif %}>
           <div class="card-body p-2">
-            <div class="d-flex justify-content-between align-items-center mb-1">
+            <div class="small fw-semibold mb-1">
+              {% if has_item %}{{ my_slot.weapon.name }}
+              {% else %}<span class="text-muted fst-italic">EMPTY</span>{% endif %}
+            </div>
+            <div class="d-flex justify-content-between align-items-center">
               <span class="badge bg-dark border">S{{ slot.slot_size }}</span>
+              {% if has_item %}
+              <button class="btn btn-outline-secondary py-0 px-1" style="font-size:.6rem;letter-spacing:.05em;min-width:3rem;"
+                      onclick="showStatsModal(null, {{ my_slot.weapon.id }})">
+                DETAILS
+              </button>
+              {% endif %}
               {% if my_slot %}
               <button class="btn btn-link btn-sm p-0 text-secondary"
                       onclick="openPicker({{ my_slot.id }}, 'weapon', {{ slot.slot_size }})">
                 <i class="bi bi-pencil"></i>
               </button>
               {% endif %}
-            </div>
-            <div class="small fw-semibold mt-1">
-              {% if has_item %}{{ my_slot.weapon.name }}
-              {% else %}<span class="text-muted fst-italic">EMPTY</span>{% endif %}
             </div>
           </div>
         </div>

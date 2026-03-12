@@ -1,6 +1,115 @@
 {
   "_readme": "Manual slot overrides for ships whose component slots are missing from the scunpacked source data. These are applied after each import so they survive data updates. Add entries here whenever you find a ship with missing slots. 'default_component' matches by name+type+size.",
 
+  "Esperia Stinger": {
+    "note": "scunpacked omits 2 of 3 cooler hardpoints for the Stinger",
+    "add_slots": [
+      {"slot_type": "cooler",            "slot_size": 1, "default_component": "Eco-Flow"},
+      {"slot_type": "cooler",            "slot_size": 1, "default_component": "Eco-Flow"},
+      {"slot_type": "power_plant",       "slot_size": 1, "default_component": "Fortitude"},
+      {"slot_type": "shield_generator",  "slot_size": 2, "default_component": "FullStop"}
+    ],
+    "modify_slots": [
+      {"slot_type": "cooler",        "slot_number": 1, "slot_size": 1},
+      {"slot_type": "power_plant",   "slot_number": 1, "slot_size": 1, "default_component": "Fortitude"},
+      {"slot_type": "quantum_drive", "slot_number": 1, "slot_size": 2}
+    ]
+  },
+
+  "Kruger L-22 Alpha Wolf": {
+    "note": "scunpacked has slot_size=0 for the L-22 QD slot; correct size is S1 (VK-00 default)",
+    "modify_slots": [
+      {"slot_type": "quantum_drive", "slot_number": 1, "slot_size": 1}
+    ]
+  },
+
+  "Drake Cutter": {
+    "note": "scunpacked creates spurious duplicate slots with wrong numbering; Cutter has 1x S1 each of cooler/PP/QD/shield",
+    "modify_slots": [
+      {"slot_type": "cooler",           "slot_number": 1, "slot_size": 1, "default_component": "BlastChill"},
+      {"slot_type": "power_plant",      "slot_number": 1, "slot_size": 1, "default_component": "LightBlossom"},
+      {"slot_type": "quantum_drive",    "slot_number": 1, "slot_size": 1, "default_component": "FoxFire"},
+      {"slot_type": "shield_generator", "slot_number": 1, "slot_size": 1}
+    ],
+    "delete_slots": [
+      {"slot_type": "cooler",           "slot_number": 2},
+      {"slot_type": "power_plant",      "slot_number": 2},
+      {"slot_type": "power_plant",      "slot_number": 3},
+      {"slot_type": "quantum_drive",    "slot_number": 2},
+      {"slot_type": "shield_generator", "slot_number": 2},
+      {"slot_type": "shield_generator", "slot_number": 3}
+    ]
+  },
+
+  "Drake Cutter Rambler": {
+    "note": "same spurious slot issue as Drake Cutter; Rambler has 1x S1 each of cooler/PP/QD/shield",
+    "modify_slots": [
+      {"slot_type": "cooler",           "slot_number": 1, "slot_size": 1, "default_component": "BlastChill"},
+      {"slot_type": "power_plant",      "slot_number": 1, "slot_size": 1, "default_component": "LightBlossom"},
+      {"slot_type": "quantum_drive",    "slot_number": 1, "slot_size": 1, "default_component": "FoxFire"},
+      {"slot_type": "shield_generator", "slot_number": 1, "slot_size": 1}
+    ],
+    "delete_slots": [
+      {"slot_type": "cooler",           "slot_number": 2},
+      {"slot_type": "power_plant",      "slot_number": 2},
+      {"slot_type": "power_plant",      "slot_number": 3},
+      {"slot_type": "quantum_drive",    "slot_number": 2},
+      {"slot_type": "shield_generator", "slot_number": 2},
+      {"slot_type": "shield_generator", "slot_number": 3}
+    ]
+  },
+
+  "Drake Cutter Scout": {
+    "note": "same spurious slot issue; Scout has 1x S2 cooler/PP, 1x S1 QD/shield",
+    "modify_slots": [
+      {"slot_type": "cooler",           "slot_number": 1, "slot_size": 2, "default_component": "Boreal"},
+      {"slot_type": "power_plant",      "slot_number": 1, "slot_size": 2, "default_component": "ExoGen"},
+      {"slot_type": "quantum_drive",    "slot_number": 1, "slot_size": 1, "default_component": "FoxFire"},
+      {"slot_type": "shield_generator", "slot_number": 1, "slot_size": 1, "default_component": "HEX"}
+    ],
+    "delete_slots": [
+      {"slot_type": "cooler",           "slot_number": 2},
+      {"slot_type": "power_plant",      "slot_number": 2},
+      {"slot_type": "power_plant",      "slot_number": 3},
+      {"slot_type": "quantum_drive",    "slot_number": 2},
+      {"slot_type": "shield_generator", "slot_number": 2},
+      {"slot_type": "shield_generator", "slot_number": 3}
+    ]
+  },
+
+  "Drake Corsair": {
+    "note": "scunpacked has slot_size=0 for the Corsair QD slot; correct size is S2 with Torrent default",
+    "modify_slots": [
+      {"slot_type": "quantum_drive", "slot_number": 1, "slot_size": 2, "default_component": "Torrent"}
+    ]
+  },
+
+  "RSI Perseus": {
+    "note": "scunpacked has slot_size=0 for all Perseus component slots; correct size is S3",
+    "modify_slots": [
+      {"slot_type": "power_plant",      "slot_number": 1, "slot_size": 3},
+      {"slot_type": "power_plant",      "slot_number": 2, "slot_size": 3},
+      {"slot_type": "cooler",           "slot_number": 1, "slot_size": 3},
+      {"slot_type": "cooler",           "slot_number": 2, "slot_size": 3},
+      {"slot_type": "shield_generator", "slot_number": 1, "slot_size": 3},
+      {"slot_type": "shield_generator", "slot_number": 2, "slot_size": 3}
+    ]
+  },
+
+  "Crusader C2 Hercules Starlifter": {
+    "note": "scunpacked includes a spurious empty S3 shield_generator slot#3; the C2 only has 2 usable shield slots in game",
+    "delete_slots": [
+      {"slot_type": "shield_generator", "slot_number": 3}
+    ]
+  },
+
+  "Anvil F7A Hornet Mk II": {
+    "note": "scunpacked includes a spurious S1 power_plant slot#2; the F7A Mk II has only one S2 PP",
+    "delete_slots": [
+      {"slot_type": "power_plant", "slot_number": 2}
+    ]
+  },
+
   "MISC Hull C": {
     "note": "scunpacked ships.json omits Cooler and QuantumDrive hardpoints for the Hull C",
     "add_slots": [

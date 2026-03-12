@@ -342,20 +342,15 @@ function buildStatsModal(titleEl, bodyEl, name, subtitle, manufacturer, stats, l
     </table>`;
 }
 
-document.addEventListener("contextmenu", async (e) => {
-  const compCard   = e.target.closest("[data-component-id]");
-  const weaponCard = e.target.closest("[data-weapon-id]");
-  if (!compCard && !weaponCard) return;
-
-  e.preventDefault();
+async function showStatsModal(componentId, weaponId) {
   const titleEl = document.getElementById("statsModalTitle");
   const bodyEl  = document.getElementById("statsModalBody");
   titleEl.textContent = "Loading…";
   bodyEl.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-warning"></div></div>';
   statsModal.show();
 
-  if (compCard) {
-    const res  = await fetch(`/api/component/${compCard.dataset.componentId}`);
+  if (componentId) {
+    const res  = await fetch(`/api/component/${componentId}`);
     const comp = await res.json();
     const labelMap = {
       cooler:            COOLER_STAT_LABELS,
@@ -366,9 +361,17 @@ document.addEventListener("contextmenu", async (e) => {
     const subtitle = `S${comp.size} ${comp.grade || ""} ${comp.class || ""}`.trim();
     buildStatsModal(titleEl, bodyEl, comp.name, subtitle, comp.manufacturer, comp.stats || {}, labelMap[comp.type] || {});
   } else {
-    const res    = await fetch(`/api/weapon/${weaponCard.dataset.weaponId}`);
+    const res    = await fetch(`/api/weapon/${weaponId}`);
     const weapon = await res.json();
     const subtitle = `S${weapon.size} ${weapon.type || ""} ${weapon.mount_type || ""}`.trim();
     buildStatsModal(titleEl, bodyEl, weapon.name, subtitle, weapon.manufacturer, weapon.stats || {}, WEAPON_STAT_LABELS);
   }
+}
+
+document.addEventListener("contextmenu", async (e) => {
+  const compCard   = e.target.closest("[data-component-id]");
+  const weaponCard = e.target.closest("[data-weapon-id]");
+  if (!compCard && !weaponCard) return;
+  e.preventDefault();
+  showStatsModal(compCard?.dataset.componentId || null, weaponCard?.dataset.weaponId || null);
 });

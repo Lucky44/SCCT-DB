@@ -24,7 +24,7 @@ def components():
     q = db.session.query(Component)
     if comp_type:
         q = q.filter(Component.component_type == comp_type)
-    if size:
+    if size is not None and size > 0:
         q = q.filter(Component.size == size)
 
     results = [

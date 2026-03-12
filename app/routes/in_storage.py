@@ -20,7 +20,9 @@ def _on_ship_maps():
         .all()
     )
     for slot, my_ship in rows:
-        label = my_ship.nickname or my_ship.ship.name
+        full_name = my_ship.ship.name
+        model_name = ' '.join(full_name.split()[1:]) if ' ' in full_name else full_name
+        label = my_ship.nickname or model_name
         if slot.component_id:
             comp_map[slot.component_id].append(label)
         if slot.weapon_id:
@@ -35,10 +37,10 @@ def index():
         db.session.query(MyInventory)
         .filter(MyInventory.component_id.isnot(None))
         .join(Component, MyInventory.component_id == Component.id)
-        .order_by(Component.component_type, Component.size)
+        .order_by(Component.name)
         .all()
     )
-    
+
     components_by_type = {
         "power_plant": [],
         "cooler": [],

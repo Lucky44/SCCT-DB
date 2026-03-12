@@ -15,17 +15,17 @@
 </div>
 
 <ul class="nav nav-tabs mb-4" id="invTabs" role="tablist">
-  <li class="nav-item"><button class="nav-link active inv-tab-power_plant" data-bs-toggle="tab" data-bs-target="#tab-power-plants">
-    Power Plants ({{ components_by_type['power_plant']|length }})
-  </button></li>
-  <li class="nav-item"><button class="nav-link inv-tab-cooler" data-bs-toggle="tab" data-bs-target="#tab-coolers">
+  <li class="nav-item"><button class="nav-link active inv-tab-cooler" data-bs-toggle="tab" data-bs-target="#tab-coolers">
     Coolers ({{ components_by_type['cooler']|length }})
   </button></li>
-  <li class="nav-item"><button class="nav-link inv-tab-shield_generator" data-bs-toggle="tab" data-bs-target="#tab-shields">
-    Shields ({{ components_by_type['shield_generator']|length }})
+  <li class="nav-item"><button class="nav-link inv-tab-power_plant" data-bs-toggle="tab" data-bs-target="#tab-power-plants">
+    Power Plants ({{ components_by_type['power_plant']|length }})
   </button></li>
   <li class="nav-item"><button class="nav-link inv-tab-quantum_drive" data-bs-toggle="tab" data-bs-target="#tab-quantum-drives">
     Quantum Drives ({{ components_by_type['quantum_drive']|length }})
+  </button></li>
+  <li class="nav-item"><button class="nav-link inv-tab-shield_generator" data-bs-toggle="tab" data-bs-target="#tab-shields">
+    Shields ({{ components_by_type['shield_generator']|length }})
   </button></li>
   <li class="nav-item"><button class="nav-link inv-tab-weapon" data-bs-toggle="tab" data-bs-target="#tab-weapons">
     Weapons ({{ weapons|length }})
@@ -34,7 +34,7 @@
 
 <div class="tab-content">
   <!-- Power Plants tab -->
-  <div class="tab-pane fade show active" id="tab-power-plants">
+  <div class="tab-pane fade" id="tab-power-plants">
     {% set comp_list = components_by_type['power_plant'] %}
     {% if comp_list %}
     <div class="table-responsive">
@@ -103,7 +103,7 @@
   </div>
 
   <!-- Coolers tab -->
-  <div class="tab-pane fade" id="tab-coolers">
+  <div class="tab-pane fade show active" id="tab-coolers">
     {% set comp_list = components_by_type['cooler'] %}
     {% if comp_list %}
     <div class="table-responsive">
