@@ -25,22 +25,26 @@ jobs:
       - name: Build with PyInstaller
         run: pyinstaller SCCT.spec
 
-      - name: Zip the build output
-        run: Compress-Archive -Path dist\SCCT\* -DestinationPath SCCT-windows.zip
+      - name: Create or update GitHub Release
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $exe  = "dist\SCCT.exe"
+          $body = @"
+          ## SC Component Tracker $tag
+
+          **Download:** ``SCCT.exe`` below
+
+          **First-time setup:** Run ``SCCT.exe``. On first launch it will import game data and download ship images (~1 min). Your browser will open automatically.
+
+          **Your data** is saved in ``%APPDATA%\SCCT`` and will not be affected by updates.
+          "@
+
+          # Create release if it doesn't exist yet; ignore error if it already does
+          gh release create $tag $exe --title "SCCT-DB $tag" --notes $body --latest 2>$null
+          if ($LASTEXITCODE -ne 0) {
+            # Release already exists (created by release.sh) — just upload/replace the exe
+            gh release upload $tag $exe --clobber
+          }
         shell: pwsh
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: SCCT-windows.zip
-          name: "SCCT ${{ github.ref_name }}"
-          body: |
-            ## SC Component Tracker ${{ github.ref_name }}
-
-            **Download:** `SCCT-windows.zip` below
-
-            **First-time setup:** Extract the zip, run `SCCT.exe`. On first launch it will import game data and download ship images (~1 min). Your browser will open automatically.
-
-            **Your data** is saved in `%APPDATA%\SCCT` and will not be affected by updates.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
