@@ -1,9 +1,27 @@
 import os
 import re
+import shutil
 import unicodedata
+from datetime import datetime
 from flask import Flask, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
+
+
+def backup_database(user_data_dir):
+    db_path = os.path.join(user_data_dir, "scct.db")
+    if not os.path.exists(db_path) or os.path.getsize(db_path) < 4096:
+        return
+    backup_dir = os.path.join(user_data_dir, "backups")
+    os.makedirs(backup_dir, exist_ok=True)
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    shutil.copy2(db_path, os.path.join(backup_dir, f"scct_backup_{timestamp}.db"))
+    backups = sorted(
+        [f for f in os.listdir(backup_dir) if f.startswith("scct_backup_")],
+        reverse=True
+    )
+    for old in backups[10:]:
+        os.remove(os.path.join(backup_dir, old))
 
 db = SQLAlchemy()
 migrate = Migrate()
@@ -38,6 +56,7 @@ def create_app():
         app.register_blueprint(api_bp)
 
         db.create_all()
+        backup_database(app.config["USER_DATA_DIR"])
 
     @app.template_filter("ship_model")
     def ship_model_filter(name):

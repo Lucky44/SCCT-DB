@@ -8,7 +8,7 @@ REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 WIN_REPO="C:\\Users\\tripp\\projects\\SCCT-DB"
 
 # Detect version from navbar
-VERSION=$(grep -oP '(?<=v)\d+\.\d+' "${REPO_DIR}/app/templates/base.html" | head -1)
+VERSION=$(grep -oE 'v[0-9]+\.[0-9]+' "${REPO_DIR}/app/templates/base.html" | head -1 | sed 's/v//')
 if [ -z "$VERSION" ]; then
   echo "ERROR: Could not detect version from base.html" >&2
   exit 1
@@ -27,6 +27,7 @@ powershell.exe -Command "
     --add-data 'app/templates;app/templates' \`
     --add-data 'app/static;app/static' \`
     --add-data 'data;data' \`
+    --hidden-import waitress \`
     --name SCCT run_packaged.py
 "
 
@@ -37,11 +38,9 @@ if [ ! -f "$EXE" ]; then
 fi
 
 echo "==> Creating GitHub release ${TAG}..."
-gh release create "${TAG}" \
-  "${EXE}#SCCT.exe" \
-  --title "SCCT-DB ${TAG}" \
-  --notes "Release ${TAG}" \
-  --latest
+GH="${PROGRAMFILES}/GitHub CLI/gh.exe"
+WIN_EXE="${WIN_REPO}\\dist\\SCCT.exe"
+powershell.exe -Command "& '${GH}' release create '${TAG}' '${WIN_EXE}#SCCT.exe' --title 'SCCT-DB ${TAG}' --notes 'Release ${TAG}' --latest"
 
 echo ""
 echo "Done! Latest release: https://github.com/Lucky44/SCCT-DB/releases/latest"
