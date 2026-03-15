@@ -1,7 +1,7 @@
 # SCCT — Star Citizen Component Tracker Database
          by Tripp Robbins
 
-A local web app for tracking your Star Citizen fleet, loadouts, and inventory. Runs entirely on your machine — no account, no cloud, no fees. This is a lite version of SC Ship Performance Viewer or Erkul.games, and it's made to be personal for one user.
+A local web app for tracking your Star Citizen fleet, loadouts, and inventory. Runs entirely on your machine — no account, no cloud, no fees. This is a lite version, similar to SC Ship Performance Viewer or Erkul.games, and it's made to be personal for one user.
 
 ![Dashboard](app/static/images/readme-screenshot.png)
 
