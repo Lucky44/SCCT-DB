@@ -47,6 +47,7 @@ def _find_json(filename):
 DEFAULT_SHIPS_JSON = _find_json("ships.json")
 DEFAULT_ITEMS_JSON = _find_json("ship-items.json")
 DEFAULT_OVERRIDES_JSON = _find_json("ship_slot_overrides.json")
+DEFAULT_ERKUL_JSON = _find_json("erkul_data.json")
 DEFAULT_DATA_OVERRIDES_JSON = _find_json("ship_data_overrides.json")
 
 # Types we care about as components (non-weapon ship equipment)
