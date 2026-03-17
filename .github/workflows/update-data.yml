@@ -55,6 +55,7 @@ jobs:
         run: |
           python scripts/fetch_scunpacked_data.py --check-only
           $changed = ($LASTEXITCODE -eq 1)
+          $global:LASTEXITCODE = 0
           echo "changed=$changed" >> $env:GITHUB_OUTPUT
           if ($changed) {
             Write-Host "Data has CHANGED — proceeding with build."
