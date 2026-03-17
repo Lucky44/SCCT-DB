@@ -7,7 +7,7 @@ This script replaces fetch_erkul_data.py in the automated update pipeline:
   2. Run import_scunpacked.py to import into the DB
   3. GitHub Actions runs both on a schedule and builds a new exe if data changed
 
-Change detection is done via the latest commit SHA — no need to download the full
+Change detection is done via the latest commit SHA - no need to download the full
 files just to check whether anything changed.
 
 Usage:
@@ -66,7 +66,7 @@ def get_latest_sha() -> str:
 def download_file(filename: str, log=print) -> None:
     dest = os.path.join(DATA_DIR, filename)
     url  = f"{BASE_RAW}/{filename}"
-    log(f"  Downloading {filename} …")
+    log(f"  Downloading {filename} ...")
     req = urllib.request.Request(url, headers=_headers())
     with urllib.request.urlopen(req, timeout=120) as resp, open(dest, "wb") as f:
         while True:
@@ -74,7 +74,7 @@ def download_file(filename: str, log=print) -> None:
             if not chunk:
                 break
             f.write(chunk)
-    log(f"    → {os.path.getsize(dest) // 1024} KB saved to {dest}")
+    log(f"    -> {os.path.getsize(dest) // 1024} KB saved to {dest}")
 
 
 # ---------------------------------------------------------------------------
@@ -107,7 +107,7 @@ def run(check_only: bool = False, log=print) -> bool:
     Check for new scunpacked data and optionally download it.
     Returns True if data changed (or would change).
     """
-    log(f"Checking {REPO} for updates …")
+    log(f"Checking {REPO} for updates ...")
 
     try:
         latest_sha = get_latest_sha()
@@ -119,8 +119,8 @@ def run(check_only: bool = False, log=print) -> bool:
     known_sha = meta.get("commit_sha", "")
     changed   = (latest_sha != known_sha)
 
-    log(f"  Remote commit: {latest_sha[:16]}…")
-    log(f"  Local commit:  {known_sha[:16] if known_sha else '(none)'}…")
+    log(f"  Remote commit: {latest_sha[:16]}...")
+    log(f"  Local commit:  {known_sha[:16] if known_sha else '(none)'}...")
     log(f"  Status: {'CHANGED' if changed else 'UNCHANGED'}")
 
     if check_only or not changed:
@@ -133,7 +133,7 @@ def run(check_only: bool = False, log=print) -> bool:
     save_meta(latest_sha)
 
     log(f"\n=== scunpacked fetch complete ===")
-    log(f"  Commit: {latest_sha[:16]}…")
+    log(f"  Commit: {latest_sha[:16]}...")
     log(f"  Files:  {', '.join(FILES)}")
     return True
 
