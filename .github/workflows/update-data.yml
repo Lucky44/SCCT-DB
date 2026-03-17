@@ -144,7 +144,7 @@ jobs:
       #   Copy the URL → GitHub repo → Settings → Secrets → New secret
       # ------------------------------------------------------------------
       - name: Notify Discord
-        if: always()
+        if: steps.check.outputs.changed == 'True' || inputs.force_build
         shell: pwsh
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
