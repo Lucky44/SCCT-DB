@@ -1,6 +1,9 @@
-from flask import Blueprint, jsonify, request, abort
+from datetime import datetime
+import json
+
+from flask import Blueprint, jsonify, request, abort, Response
 from app import db
-from app.models import Component, Weapon, MyShip, MyShipLoadout, MyInventory, ShipDefaultLoadout
+from app.models import Component, Weapon, Ship, MyShip, MyShipLoadout, MyInventory, ShipDefaultLoadout, ShipPowerAllocation
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 
@@ -160,6 +163,32 @@ def equip(slot_id):
     return jsonify({"ok": True, "slot_id": slot.id})
 
 
+@api_bp.route("/check-update")
+def check_update():
+    """Check GitHub for a newer release. Cached 1 hr."""
+    from app.updater import check_for_update
+    return jsonify(check_for_update())
+
+
+@api_bp.route("/update/download", methods=["POST"])
+def update_download():
+    """Download the new exe to disk. Blocks until complete."""
+    from app.updater import download_update
+    data = request.get_json(force=True)
+    url  = data.get("download_url")
+    if not url:
+        return jsonify({"ok": False, "error": "No download_url provided"}), 400
+    return jsonify(download_update(url))
+
+
+@api_bp.route("/update/restart", methods=["POST"])
+def update_restart():
+    """Launch the swap batch script and exit. App will restart as new version."""
+    from app.updater import launch_update_and_exit
+    launch_update_and_exit()
+    return jsonify({"ok": True})   # only reached in dev mode
+
+
 @api_bp.route("/inventory/increment", methods=["POST"])
 def inventory_increment():
     """Increment (or create) a MyInventory record by 1, then proceed with equip."""
@@ -186,3 +215,168 @@ def inventory_increment():
 
     db.session.commit()
     return jsonify({"ok": True, "quantity": inv.quantity})
+
+
+@api_bp.route("/export")
+def export_data():
+    """Export all user data (hangar, loadouts, inventory) as a JSON backup file."""
+    hangar = []
+    for ms in db.session.query(MyShip).order_by(MyShip.display_order).all():
+        loadout = []
+        for slot in ms.loadout:
+            entry = {"slot_type": slot.slot_type, "slot_number": slot.slot_number}
+            if slot.component_id and slot.component:
+                entry.update({
+                    "component_name": slot.component.name,
+                    "component_type": slot.component.component_type,
+                    "component_size": slot.component.size,
+                    "component_grade": slot.component.grade,
+                })
+            elif slot.weapon_id and slot.weapon:
+                entry.update({
+                    "weapon_name": slot.weapon.name,
+                    "weapon_size": slot.weapon.size,
+                })
+            loadout.append(entry)
+
+        hangar.append({
+            "ship_name": ms.ship.name if ms.ship else None,
+            "nickname": ms.nickname,
+            "notes": ms.notes,
+            "display_order": ms.display_order,
+            "loadout": loadout,
+            "power_allocation": ms.power_allocation.allocation_data if ms.power_allocation else None,
+        })
+
+    inventory = []
+    for inv in db.session.query(MyInventory).all():
+        entry = {"quantity": inv.quantity, "location": inv.location, "notes": inv.notes}
+        if inv.component_id and inv.component:
+            entry.update({
+                "component_name": inv.component.name,
+                "component_type": inv.component.component_type,
+                "component_size": inv.component.size,
+                "component_grade": inv.component.grade,
+            })
+        elif inv.weapon_id and inv.weapon:
+            entry.update({
+                "weapon_name": inv.weapon.name,
+                "weapon_size": inv.weapon.size,
+            })
+        inventory.append(entry)
+
+    payload = {
+        "version": "1.0",
+        "exported_at": datetime.utcnow().isoformat() + "Z",
+        "hangar": hangar,
+        "inventory": inventory,
+    }
+    filename = f"scct-backup-{datetime.utcnow().strftime('%Y%m%d')}.json"
+    return Response(
+        json.dumps(payload, indent=2),
+        mimetype="application/json",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
+
+
+@api_bp.route("/import", methods=["POST"])
+def import_data():
+    """Replace all user data from a JSON backup file."""
+    file = request.files.get("file")
+    if not file:
+        return jsonify({"ok": False, "error": "No file provided"}), 400
+
+    try:
+        data = json.loads(file.read())
+    except Exception:
+        return jsonify({"ok": False, "error": "Invalid JSON file"}), 400
+
+    if "hangar" not in data or "inventory" not in data:
+        return jsonify({"ok": False, "error": "Invalid backup format — missing hangar or inventory keys"}), 400
+
+    # Wipe existing user data
+    db.session.query(ShipPowerAllocation).delete()
+    db.session.query(MyShipLoadout).delete()
+    db.session.query(MyShip).delete()
+    db.session.query(MyInventory).delete()
+
+    stats = {"ships_imported": 0, "ships_skipped": 0, "inventory_imported": 0, "inventory_skipped": 0}
+
+    for entry in data.get("hangar", []):
+        ship = db.session.query(Ship).filter_by(name=entry.get("ship_name")).first()
+        if not ship:
+            stats["ships_skipped"] += 1
+            continue
+
+        ms = MyShip(
+            ship_id=ship.id,
+            nickname=entry.get("nickname"),
+            notes=entry.get("notes"),
+            display_order=entry.get("display_order"),
+        )
+        db.session.add(ms)
+        db.session.flush()
+
+        for slot in entry.get("loadout", []):
+            msl = MyShipLoadout(
+                my_ship_id=ms.id,
+                slot_type=slot["slot_type"],
+                slot_number=slot["slot_number"],
+            )
+            if "component_name" in slot:
+                comp = db.session.query(Component).filter_by(
+                    name=slot["component_name"],
+                    component_type=slot.get("component_type"),
+                    size=slot.get("component_size"),
+                ).first()
+                if comp:
+                    msl.component_id = comp.id
+            elif "weapon_name" in slot:
+                weap = db.session.query(Weapon).filter_by(
+                    name=slot["weapon_name"],
+                    size=slot.get("weapon_size"),
+                ).first()
+                if weap:
+                    msl.weapon_id = weap.id
+            db.session.add(msl)
+
+        if entry.get("power_allocation"):
+            db.session.add(ShipPowerAllocation(
+                my_ship_id=ms.id,
+                allocation_data=entry["power_allocation"],
+            ))
+
+        stats["ships_imported"] += 1
+
+    for entry in data.get("inventory", []):
+        inv = MyInventory(
+            quantity=entry.get("quantity", 1),
+            location=entry.get("location", "storage"),
+            notes=entry.get("notes"),
+        )
+        if "component_name" in entry:
+            comp = db.session.query(Component).filter_by(
+                name=entry["component_name"],
+                component_type=entry.get("component_type"),
+                size=entry.get("component_size"),
+            ).first()
+            if comp:
+                inv.component_id = comp.id
+                db.session.add(inv)
+                stats["inventory_imported"] += 1
+            else:
+                stats["inventory_skipped"] += 1
+        elif "weapon_name" in entry:
+            weap = db.session.query(Weapon).filter_by(
+                name=entry["weapon_name"],
+                size=entry.get("weapon_size"),
+            ).first()
+            if weap:
+                inv.weapon_id = weap.id
+                db.session.add(inv)
+                stats["inventory_imported"] += 1
+            else:
+                stats["inventory_skipped"] += 1
+
+    db.session.commit()
+    return jsonify({"ok": True, **stats})

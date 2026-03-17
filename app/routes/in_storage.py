@@ -46,6 +46,7 @@ def index():
         "cooler": [],
         "shield_generator": [],
         "quantum_drive": [],
+        "radar": [],
     }
     for comp in all_user_components:
         comp_type = comp.component.component_type

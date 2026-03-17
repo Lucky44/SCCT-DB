@@ -58,6 +58,11 @@ def create_app():
         db.create_all()
         backup_database(app.config["USER_DATA_DIR"])
 
+    @app.context_processor
+    def inject_version():
+        from app.updater import get_current_version
+        return {"app_version": get_current_version()}
+
     @app.template_filter("ship_model")
     def ship_model_filter(name):
         """Strip the manufacturer abbreviation prefix (first word) from a ship name."""

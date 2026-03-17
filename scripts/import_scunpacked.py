@@ -50,7 +50,7 @@ DEFAULT_OVERRIDES_JSON = _find_json("ship_slot_overrides.json")
 DEFAULT_DATA_OVERRIDES_JSON = _find_json("ship_data_overrides.json")
 
 # Types we care about as components (non-weapon ship equipment)
-COMPONENT_TYPES = {"PowerPlant", "Cooler", "Shield", "QuantumDrive"}
+COMPONENT_TYPES = {"PowerPlant", "Cooler", "Shield", "QuantumDrive", "Radar"}
 
 # Types we care about as weapons
 WEAPON_TYPES = {"WeaponGun"}
@@ -61,6 +61,7 @@ COMPONENT_TYPE_MAP = {
     "Cooler": "cooler",
     "Shield": "shield_generator",
     "QuantumDrive": "quantum_drive",
+    "Radar": "radar",
 }
 
 # Map raw item type → our DB weapon_type string
@@ -74,6 +75,7 @@ SLOT_TYPE_MAP = {
     "PowerPlant": "power_plant",
     "Shield": "shield_generator",
     "QuantumDrive": "quantum_drive",
+    "Radar": "radar",
     "WeaponGun": "weapon",
 }
 
@@ -180,6 +182,18 @@ def extract_stats(item, itype):
             "fuel_requirement": qd.get("QuantumFuelRequirement"),
             "power_pips_min": rn_usage_power.get("Minimum"),
             "power_pips_max": rn_usage_power.get("Maximum"),
+            "health": durability.get("Health"),
+        }
+    if itype == "Radar":
+        radar = std.get("Radar", {})
+        sensitivity = radar.get("Sensitivity", {})
+        durability = std.get("Durability", {})
+        return {
+            "sensitivity_ir": sensitivity.get("IR"),
+            "sensitivity_em": sensitivity.get("EM"),
+            "sensitivity_cs": sensitivity.get("CS"),
+            "sensitivity_rs": sensitivity.get("RS"),
+            "cooldown": radar.get("Cooldown"),
             "health": durability.get("Health"),
         }
     if itype == "WeaponGun":
@@ -332,12 +346,59 @@ def do_import(ships_path, items_path, log=print):
                 missile_damage_by_class[item["className"]] = dmg
 
     # ----------------------------------------------------------------
-    # 3. Import components
+    # 3. Import components — erkul first (primary), SCUnpacked fills gaps
     # ----------------------------------------------------------------
     log("Importing components …")
-    component_by_class = {}   # className → Component (DB object)
+    component_by_class = {}   # className/localName → Component (DB object)
     component_seen = {}       # (name, type, size, grade) → Component (deduplicate)
 
+    # -- 3a. Load erkul_data.json if present (primary source) --
+    erkul_path = _find_json("erkul_data.json")
+    if os.path.exists(erkul_path):
+        log(f"  Loading erkul data from: {erkul_path}")
+        with open(erkul_path, encoding="utf-8") as f:
+            erkul_data = json.load(f)
+        erkul_components = erkul_data.get("components", [])
+        log(f"  → {len(erkul_components)} erkul components to process")
+
+        for ec in erkul_components:
+            name = (ec.get("name") or "").strip()
+            if not name or "<=" in name:
+                continue
+
+            comp_type  = ec.get("type", "")
+            size       = ec.get("size")
+            grade      = ec.get("grade")
+            class_str  = ec.get("class_")
+            mfr        = ec.get("manufacturer")
+            local_name = ec.get("local_name", "")
+            stats      = ec.get("stats") or {}
+
+            dedup_key = (name, comp_type, size, grade)
+            if dedup_key in component_seen:
+                if local_name:
+                    component_by_class[local_name] = component_seen[dedup_key]
+                continue
+
+            comp = Component(
+                name=name,
+                component_type=comp_type,
+                size=size,
+                grade=grade,
+                class_=class_str,
+                manufacturer=mfr,
+                stats=stats,
+            )
+            db.session.add(comp)
+            db.session.flush()
+            if local_name:
+                component_by_class[local_name] = comp
+            component_seen[dedup_key] = comp
+    else:
+        log("  No erkul_data.json found — using SCUnpacked only")
+
+    # -- 3b. SCUnpacked components — skip any already loaded from erkul --
+    scunpacked_added = 0
     for item in raw_items:
         itype = item.get("type", "")
         if itype not in COMPONENT_TYPES:
@@ -357,6 +418,7 @@ def do_import(ships_path, items_path, log=print):
         dedup_key = (name, comp_type, size, grade_letter)
 
         if dedup_key in component_seen:
+            # Already loaded from erkul — just register this className alias
             component_by_class[item["className"]] = component_seen[dedup_key]
             continue
 
@@ -374,9 +436,12 @@ def do_import(ships_path, items_path, log=print):
 
         component_by_class[item["className"]] = comp
         component_seen[dedup_key] = comp
+        scunpacked_added += 1
 
     db.session.commit()
-    log(f"  → {db.session.query(Component).count()} components")
+    total_comps = db.session.query(Component).count()
+    erkul_count = total_comps - scunpacked_added
+    log(f"  → {total_comps} components ({erkul_count} from erkul, {scunpacked_added} from SCUnpacked)")
 
     # ----------------------------------------------------------------
     # 4. Import weapons

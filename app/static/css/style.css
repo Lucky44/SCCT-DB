@@ -19,6 +19,7 @@ h1, h2, h3, h4, h5, h6,
   letter-spacing: 0.05em;
 }
 
+
 /* Sticky table headers */
 .table-sticky thead th {
   position: sticky;
@@ -48,8 +49,6 @@ h1, h2, h3, h4, h5, h6,
 .card {
   background-color: rgba(13, 17, 23, 0.75);
   border-color: rgba(210, 153, 34, 0.25);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
 }
 
 .card-header, .card-footer {
@@ -112,6 +111,7 @@ h1, h2, h3, h4, h5, h6,
 .slot-card-power_plant      { background-color: #272200; border-color: #d4b840 !important; }
 .slot-card-shield_generator { background-color: #101c30; border-color: #5b8cc8 !important; }
 .slot-card-quantum_drive    { background-color: #28102a; border-color: #b07090 !important; }
+.slot-card-radar            { background-color: #0f2218; border-color: #4caf7a !important; }
 .slot-card-weapon           { background-color: #2d1515; border-color: #ef5350 !important; }
 .slot-card-empty            { background-color: #13171c !important; border-color: #30363d !important; }
 
@@ -120,6 +120,7 @@ h1, h2, h3, h4, h5, h6,
 .slot-label-power_plant      { color: #d4b840; }
 .slot-label-shield_generator { color: #5b8cc8; }
 .slot-label-quantum_drive    { color: #b07090; }
+.slot-label-radar            { color: #4caf7a; }
 .slot-label-weapon           { color: #ef5350; }
 
 /* Remove Ship toggle button */
@@ -204,11 +205,13 @@ h1, h2, h3, h4, h5, h6,
 .nav-tabs .nav-link.inv-tab-cooler           { color: #a0c8e8 !important; }
 .nav-tabs .nav-link.inv-tab-shield_generator { color: #5b8cc8 !important; }
 .nav-tabs .nav-link.inv-tab-quantum_drive    { color: #b07090 !important; }
+.nav-tabs .nav-link.inv-tab-radar            { color: #4caf7a !important; }
 .nav-tabs .nav-link.inv-tab-weapon           { color: #ef5350 !important; }
 .nav-tabs .nav-link.inv-tab-power_plant.active      { border-color: #d4b840 transparent transparent transparent !important; }
 .nav-tabs .nav-link.inv-tab-cooler.active           { border-color: #a0c8e8 transparent transparent transparent !important; }
 .nav-tabs .nav-link.inv-tab-shield_generator.active { border-color: #5b8cc8 transparent transparent transparent !important; }
 .nav-tabs .nav-link.inv-tab-quantum_drive.active    { border-color: #b07090 transparent transparent transparent !important; }
+.nav-tabs .nav-link.inv-tab-radar.active            { border-color: #4caf7a transparent transparent transparent !important; }
 .nav-tabs .nav-link.inv-tab-weapon.active           { border-color: #ef5350 transparent transparent transparent !important; }
 
 /* DB reference card accent colors */

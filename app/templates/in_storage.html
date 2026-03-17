@@ -27,6 +27,9 @@
   <li class="nav-item"><button class="nav-link inv-tab-shield_generator" data-bs-toggle="tab" data-bs-target="#tab-shields">
     Shields ({{ components_by_type['shield_generator']|length }})
   </button></li>
+  <li class="nav-item"><button class="nav-link inv-tab-radar" data-bs-toggle="tab" data-bs-target="#tab-radars">
+    Radars ({{ components_by_type['radar']|length }})
+  </button></li>
   <li class="nav-item"><button class="nav-link inv-tab-weapon" data-bs-toggle="tab" data-bs-target="#tab-weapons">
     Weapons ({{ weapons|length }})
   </button></li>
@@ -305,6 +308,75 @@
     <div class="text-center py-5 text-muted">
       <i class="bi bi-lightning fs-1 d-block mb-3 opacity-25"></i>
       <p>No quantum drives in inventory.</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Radars tab -->
+  <div class="tab-pane fade" id="tab-radars">
+    {% set comp_list = components_by_type['radar'] %}
+    {% if comp_list %}
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead class="table-dark">
+          <tr>
+            <th class="sortable-header" data-sort="name" style="cursor:pointer">Name <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
+            <th class="sortable-header" data-sort="size" style="cursor:pointer">Size <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
+            <th class="sortable-header" data-sort="grade" style="cursor:pointer">Grade <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
+            <th class="sortable-header" data-sort="class" style="cursor:pointer">Class <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
+            <th class="sortable-header" data-sort="qty" style="cursor:pointer">Total Owned <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
+            <th>In Storage</th>
+            <th>On Ship</th>
+            <th class="sortable-header" data-sort="notes" style="cursor:pointer">Notes <i class="bi bi-arrow-down-up" style="font-size:0.75em;margin-left:0.25em;opacity:0.5"></i></th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in comp_list %}
+          {% set ships = comp_on_ship.get(item.component_id, []) %}
+          {% set on_ships_count = ships|length %}
+          {% set in_storage = [item.quantity - on_ships_count, 0]|max %}
+          <form id="upd-c-{{ item.id }}" action="{{ url_for('in_storage.update', item_id=item.id) }}" method="post"></form>
+          <tr>
+            <td class="fw-semibold">{{ item.component.name }}</td>
+            <td><span class="badge bg-dark border">S{{ item.component.size }}</span></td>
+            <td><span class="badge badge-grade-{{ item.component.grade }}">{{ item.component.grade }}</span></td>
+            <td class="small class-{{ (item.component.class_ or '')|lower }}">{{ item.component.class_ or '—' }}</td>
+            <td>
+              <input form="upd-c-{{ item.id }}" type="number" name="quantity"
+                     value="{{ item.quantity }}" min="{{ on_ships_count }}"
+                     class="form-control form-control-sm inv-total-owned" style="width:70px"
+                     data-on-ships="{{ on_ships_count }}"
+                     onblur="this.form.submit()" oninput="updateInStorage(this)">
+            </td>
+            <td class="small inv-in-storage {% if in_storage == 0 %}text-danger{% else %}text-success{% endif %}">
+              {{ in_storage }}
+            </td>
+            <td class="small">
+              {% if ships %}
+                <span class="text-warning">{{ ships|join(', ') }}</span>
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+            <td class="small text-muted">{{ item.notes or '' }}
+              <input form="upd-c-{{ item.id }}" type="hidden" name="notes" value="{{ item.notes or '' }}">
+            </td>
+            <td class="text-end text-nowrap">
+              <form action="{{ url_for('in_storage.delete', item_id=item.id) }}" method="post" class="d-inline"
+                    onsubmit="return confirm('Remove this item?')">
+                <button class="btn btn-outline-danger btn-sm"><i class="bi bi-trash"></i></button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="text-center py-5 text-muted">
+      <i class="bi bi-broadcast fs-1 d-block mb-3 opacity-25"></i>
+      <p>No radars in inventory.</p>
     </div>
     {% endif %}
   </div>
