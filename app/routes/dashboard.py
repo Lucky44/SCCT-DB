@@ -23,17 +23,12 @@ def _read_state():
         return None
 
 
-def _write_state(ships_path, items_path, erkul_path=None):
+def _write_state(ships_path, items_path):
     state = {
         "imported_at": datetime.now(timezone.utc).isoformat(),
         "ships_mtime": os.path.getmtime(ships_path),
         "items_mtime": os.path.getmtime(items_path),
     }
-    if erkul_path:
-        try:
-            state["erkul_mtime"] = os.path.getmtime(erkul_path)
-        except OSError:
-            pass
     os.makedirs(current_app.instance_path, exist_ok=True)
     with open(_state_path(), "w", encoding="utf-8") as f:
         json.dump(state, f)
@@ -55,7 +50,7 @@ def _time_ago(dt):
     return f"{d} day{'s' if d != 1 else ''} ago"
 
 
-def _get_data_status(ships_path, items_path, erkul_path=None):
+def _get_data_status(ships_path, items_path):
     state = _read_state()
     if state is None:
         return {"known": False}
@@ -68,12 +63,6 @@ def _get_data_status(ships_path, items_path, erkul_path=None):
         ships_mtime > state["ships_mtime"] or
         items_mtime > state["items_mtime"]
     )
-    if not update_available and erkul_path:
-        try:
-            erkul_mtime = os.path.getmtime(erkul_path)
-            update_available = erkul_mtime > state.get("erkul_mtime", 0)
-        except OSError:
-            pass
     imported_at = datetime.fromisoformat(state["imported_at"])
     return {
         "known": True,
@@ -96,14 +85,14 @@ def index():
     scripts_dir = os.path.join(project_root, "scripts")
     sys.path.insert(0, scripts_dir)
     try:
-        from import_scunpacked import DEFAULT_SHIPS_JSON, DEFAULT_ITEMS_JSON, DEFAULT_ERKUL_JSON
+        from import_scunpacked import DEFAULT_SHIPS_JSON, DEFAULT_ITEMS_JSON
         # Bootstrap state file on first load if data exists but state is missing
         if _read_state() is None and db.session.query(Ship).count() > 0:
             try:
-                _write_state(DEFAULT_SHIPS_JSON, DEFAULT_ITEMS_JSON, DEFAULT_ERKUL_JSON)
+                _write_state(DEFAULT_SHIPS_JSON, DEFAULT_ITEMS_JSON)
             except Exception:
                 pass
-        data_status = _get_data_status(DEFAULT_SHIPS_JSON, DEFAULT_ITEMS_JSON, DEFAULT_ERKUL_JSON)
+        data_status = _get_data_status(DEFAULT_SHIPS_JSON, DEFAULT_ITEMS_JSON)
     except Exception:
         data_status = {"known": False}
 
@@ -117,7 +106,7 @@ def update_game_data():
     sys.path.insert(0, scripts_dir)
 
     try:
-        from import_scunpacked import do_import, DEFAULT_SHIPS_JSON, DEFAULT_ITEMS_JSON, DEFAULT_ERKUL_JSON
+        from import_scunpacked import do_import, DEFAULT_SHIPS_JSON, DEFAULT_ITEMS_JSON
         if not os.path.exists(DEFAULT_SHIPS_JSON):
             flash(f"ships.json not found at: {DEFAULT_SHIPS_JSON}", "danger")
             return redirect(url_for("dashboard.index"))
@@ -126,7 +115,7 @@ def update_game_data():
             return redirect(url_for("dashboard.index"))
 
         summary = do_import(DEFAULT_SHIPS_JSON, DEFAULT_ITEMS_JSON, log=lambda x: None)
-        _write_state(DEFAULT_SHIPS_JSON, DEFAULT_ITEMS_JSON, DEFAULT_ERKUL_JSON)
+        _write_state(DEFAULT_SHIPS_JSON, DEFAULT_ITEMS_JSON)
         flash(
             f"Game data updated: {summary['ships']} ships, "
             f"{summary['components']} components, {summary['weapons']} weapons.",

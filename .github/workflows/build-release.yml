@@ -34,9 +34,9 @@ jobs:
 
           **Download:** ``SCCT.exe`` below
 
-          **First-time setup:** Run ``SCCT.exe``. On first launch it will import game data and download ship images (~1 min). Your browser will open automatically.
+          **First-time setup:** Run ``SCCT.exe`` — your browser opens automatically. Click **Update Game Data** on the Dashboard to import ships and components.
 
-          **Your data** is saved in ``%APPDATA%\SCCT`` and will not be affected by updates.
+          **Your data** is saved next to the exe and will not be affected by updates.
           "@
 
           # Create release if it doesn't exist yet; ignore error if it already does

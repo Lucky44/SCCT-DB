@@ -1,5 +1,5 @@
 # SCCT — Star Citizen Component Tracker Database
-         by Tripp Robbins — v0.71
+         by Tripp Robbins — v0.72
 
 A local web app for tracking your Star Citizen fleet, loadouts, and inventory. Runs entirely on your machine — no account, no cloud, no fees. This is a lite version, similar to SC Ship Performance Viewer or Erkul.games, and it's made to be personal for one user.
 
@@ -39,7 +39,7 @@ On first run, click **Update Game Data** on the Dashboard.
 
 ## Data
 
-Ship/component data is sourced from [scunpacked-data](https://github.com/StarCitizenTools/scunpacked-data). Your fleet and inventory are stored locally in `%APPDATA%\SCCT\scct.db` and are never affected by game data updates.
+Ship/component data is sourced from [scunpacked-data](https://github.com/StarCitizenWiki/scunpacked-data). Your fleet and inventory are stored locally in `%APPDATA%\SCCT\scct.db` and are never affected by game data updates.
 
 ## Stack
 

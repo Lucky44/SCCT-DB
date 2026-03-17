@@ -1,16 +1,16 @@
 name: Auto-Update Game Data
 
-# Runs hourly. If erkul PTU data has changed since the last build,
-# fetches fresh data, bumps the patch version, builds a new SCCT.exe,
-# publishes a GitHub Release, and notifies via Discord + GitHub email.
+# Runs daily. If scunpacked-data has a new commit since the last build,
+# downloads fresh ships.json / ship-items.json, bumps the patch version,
+# builds a new SCCT.exe, publishes a GitHub Release, and notifies Discord.
 
 on:
   schedule:
-    - cron: '0 * * * *'   # every hour at :00
+    - cron: '0 6 * * *'   # daily at 06:00 UTC
   workflow_dispatch:
     inputs:
       force_build:
-        description: 'Force build even if erkul data is unchanged'
+        description: 'Force build even if scunpacked data is unchanged'
         type: boolean
         default: false
 
@@ -45,13 +45,15 @@ jobs:
         shell: pwsh
 
       # ------------------------------------------------------------------
-      # 3. Check whether erkul data has changed
+      # 3. Check whether scunpacked-data has new commits
       # ------------------------------------------------------------------
-      - name: Check for new erkul data
+      - name: Check for new scunpacked data
         id: check
         shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          python scripts/fetch_erkul_data.py --check-only
+          python scripts/fetch_scunpacked_data.py --check-only
           $changed = ($LASTEXITCODE -eq 1)
           echo "changed=$changed" >> $env:GITHUB_OUTPUT
           if ($changed) {
@@ -61,12 +63,14 @@ jobs:
           }
 
       # ------------------------------------------------------------------
-      # 4. Fetch fresh erkul data  (only if changed or forced)
+      # 4. Download fresh scunpacked data  (only if changed or forced)
       # ------------------------------------------------------------------
-      - name: Fetch erkul data
+      - name: Fetch scunpacked data
         if: steps.check.outputs.changed == 'True' || inputs.force_build
         shell: pwsh
-        run: python scripts/fetch_erkul_data.py
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python scripts/fetch_scunpacked_data.py
 
       # ------------------------------------------------------------------
       # 5. Bump patch version and commit updated data
@@ -76,22 +80,24 @@ jobs:
         if: steps.check.outputs.changed == 'True' || inputs.force_build
         shell: pwsh
         run: |
-          # Read current version (format: MAJOR.MINOR.PATCH)
-          $ver = (Get-Content version.txt).Trim()
+          # Read current version from data/version.txt (format: MAJOR.MINOR.PATCH)
+          $ver = (Get-Content data/version.txt).Trim()
           $parts = $ver.Split('.')
+          # Ensure we have a patch segment (handle "0.72" → "0.72.0")
+          if ($parts.Count -lt 3) { $parts += "0" }
           $parts[2] = [string]([int]$parts[2] + 1)
           $new_ver = $parts -join '.'
-          Set-Content version.txt "$new_ver`n"
+          Set-Content data/version.txt "$new_ver`n"
 
           $tag = "v$new_ver"
           echo "new_version=$new_ver" >> $env:GITHUB_OUTPUT
-          echo "tag=$tag"            >> $env:GITHUB_OUTPUT
+          echo "tag=$tag"             >> $env:GITHUB_OUTPUT
           Write-Host "Version: $ver -> $new_ver  (tag: $tag)"
 
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/erkul_data.json version.txt
-          git commit -m "chore: auto-update erkul game data ($tag)"
+          git add data/ships.json data/ship-items.json data/scunpacked_meta.json data/version.txt
+          git commit -m "chore: auto-update scunpacked game data ($tag)"
           git push
 
       # ------------------------------------------------------------------
@@ -106,6 +112,7 @@ jobs:
             --add-data "app/templates;app/templates" `
             --add-data "app/static;app/static" `
             --add-data "data;data" `
+            --add-data "scripts;scripts" `
             --hidden-import waitress `
             --name SCCT `
             run_packaged.py
@@ -124,9 +131,9 @@ jobs:
           $notes   = @"
           ## SCCT $tag — Automated Game Data Update
 
-          This release was built automatically after new data was detected on erkul.games PTU.
+          This release was built automatically after new data was detected in scunpacked-data.
 
-          **What changed:** Component and loadout data updated to the latest PTU patch.
+          **What changed:** Ship and component data updated to the latest game patch.
           **User data:** Your hangar, loadout, and inventory data are preserved automatically — just replace the exe.
 
           Download SCCT.exe below.
@@ -137,11 +144,9 @@ jobs:
             --latest
 
       # ------------------------------------------------------------------
-      # 8. Discord notification  (always runs — reports success or failure)
+      # 8. Discord notification
       # SETUP REQUIRED: Add your Discord webhook URL as a GitHub secret
-      # named DISCORD_WEBHOOK_URL. To create one:
-      #   Discord server → Settings → Integrations → Webhooks → New Webhook
-      #   Copy the URL → GitHub repo → Settings → Secrets → New secret
+      # named DISCORD_WEBHOOK_URL.
       # ------------------------------------------------------------------
       - name: Notify Discord
         if: steps.check.outputs.changed == 'True' || inputs.force_build
@@ -154,19 +159,18 @@ jobs:
           $job_url  = "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           $rel_url  = "https://github.com/${{ github.repository }}/releases/latest"
 
-          # Determine overall outcome
           $build_ran = ($changed -eq 'True') -or ('${{ inputs.force_build }}' -eq 'true')
 
           if (-not $build_ran) {
-            $color       = 6842623          # grey-blue
+            $color       = 6842623
             $title       = "SCCT: No update needed"
-            $description = "Erkul data is unchanged. No build triggered."
+            $description = "scunpacked data is unchanged. No build triggered."
           } elseif ('${{ job.status }}' -eq 'success') {
-            $color       = 5763719          # green
+            $color       = 5763719
             $title       = "SCCT $tag released!"
             $description = "New game data detected and built successfully. [Download here]($rel_url)"
           } else {
-            $color       = 15548997         # red
+            $color       = 15548997
             $title       = "SCCT build FAILED"
             $description = "A new build was triggered but failed. [View logs]($job_url)"
           }
