@@ -189,6 +189,14 @@ def update_restart():
     return jsonify({"ok": True})   # only reached in dev mode
 
 
+@api_bp.route("/shutdown", methods=["POST"])
+def shutdown():
+    """Shut down the Flask server process."""
+    import os, threading
+    threading.Timer(0.5, lambda: os._exit(0)).start()
+    return jsonify({"ok": True})
+
+
 @api_bp.route("/inventory/increment", methods=["POST"])
 def inventory_increment():
     """Increment (or create) a MyInventory record by 1, then proceed with equip."""

@@ -72,7 +72,10 @@
           </ul>
         </li>
       </ul>
-      <span class="navbar-text text-muted small" id="version-display">v{{ app_version }}</span>
+      <span class="navbar-text text-muted small me-3" id="version-display">v{{ app_version }}</span>
+      <button class="btn btn-outline-danger btn-sm" onclick="shutdownApp()">
+        <i class="bi bi-power me-1"></i>Shutdown App
+      </button>
     </div>
   </div>
 </nav>
@@ -254,8 +257,9 @@
           .then(r => r.json())
           .then(res => {
             if (res.ok) {
+              downloadBtn.disabled = false;
               downloadBtn.className = 'btn btn-success btn-sm';
-              downloadBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Restart to Apply';
+              downloadBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Click to Restart';
               downloadBtn.addEventListener('click', function () {
                 downloadBtn.disabled = true;
                 downloadBtn.textContent = 'Restarting…';
@@ -280,6 +284,14 @@
     })
     .catch(() => {});  // silently ignore network errors
 })();
+</script>
+
+<script>
+function shutdownApp() {
+  if (!confirm('Shut down SCCT? The browser window will stop working.')) return;
+  fetch('/api/shutdown', {method: 'POST'}).catch(() => {});
+  document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;color:#aaa;font-family:sans-serif;font-size:1.2rem;">SCCT has shut down. You can close this window.</div>';
+}
 </script>
 
 <script>
