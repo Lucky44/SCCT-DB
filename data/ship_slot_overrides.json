@@ -1,6 +1,49 @@
 {
   "_readme": "Manual slot overrides for ships whose component slots are missing from the scunpacked source data. These are applied after each import so they survive data updates. Add entries here whenever you find a ship with missing slots. 'default_component' matches by name+type+size.",
 
+  "RSI Polaris": {
+    "note": "scunpacked reports MaxSize=0 for the Polaris cooler, power plant, and shield generator; correct size is S4",
+    "modify_slots": [
+      {"slot_type": "cooler",           "slot_number": 1, "slot_size": 4},
+      {"slot_type": "power_plant",      "slot_number": 1, "slot_size": 4},
+      {"slot_type": "shield_generator", "slot_number": 1, "slot_size": 4}
+    ]
+  },
+
+  "RSI Perseus": {
+    "note": "scunpacked has slot_size=0 for all Perseus component slots; correct size is S3",
+    "modify_slots": [
+      {"slot_type": "power_plant",      "slot_number": 1, "slot_size": 3},
+      {"slot_type": "power_plant",      "slot_number": 2, "slot_size": 3},
+      {"slot_type": "cooler",           "slot_number": 1, "slot_size": 3},
+      {"slot_type": "cooler",           "slot_number": 2, "slot_size": 3},
+      {"slot_type": "shield_generator", "slot_number": 1, "slot_size": 3},
+      {"slot_type": "shield_generator", "slot_number": 2, "slot_size": 3}
+    ]
+  },
+
+  "Kruger L-22 Alpha Wolf": {
+    "note": "scunpacked has slot_size=0 for L-22 QD, power plant, and both shield slots; correct sizes are all S1",
+    "modify_slots": [
+      {"slot_type": "quantum_drive",    "slot_number": 1, "slot_size": 1},
+      {"slot_type": "power_plant",      "slot_number": 1, "slot_size": 1},
+      {"slot_type": "shield_generator", "slot_number": 1, "slot_size": 1},
+      {"slot_type": "shield_generator", "slot_number": 2, "slot_size": 1}
+    ]
+  },
+
+  "Drake Corsair": {
+    "note": "scunpacked has slot_size=0 for all Corsair component slots; correct sizes are S2 for cooler/PP/QD, S3 for shield",
+    "modify_slots": [
+      {"slot_type": "quantum_drive",    "slot_number": 1, "slot_size": 2, "default_component": "Torrent"},
+      {"slot_type": "cooler",           "slot_number": 1, "slot_size": 2},
+      {"slot_type": "cooler",           "slot_number": 2, "slot_size": 2},
+      {"slot_type": "power_plant",      "slot_number": 1, "slot_size": 2},
+      {"slot_type": "power_plant",      "slot_number": 2, "slot_size": 2},
+      {"slot_type": "shield_generator", "slot_number": 1, "slot_size": 3}
+    ]
+  },
+
   "Esperia Stinger": {
     "note": "scunpacked omits 2 of 3 cooler hardpoints for the Stinger",
     "add_slots": [
@@ -13,13 +56,6 @@
       {"slot_type": "cooler",        "slot_number": 1, "slot_size": 1},
       {"slot_type": "power_plant",   "slot_number": 1, "slot_size": 1, "default_component": "Fortitude"},
       {"slot_type": "quantum_drive", "slot_number": 1, "slot_size": 2}
-    ]
-  },
-
-  "Kruger L-22 Alpha Wolf": {
-    "note": "scunpacked has slot_size=0 for the L-22 QD slot; correct size is S1 (VK-00 default)",
-    "modify_slots": [
-      {"slot_type": "quantum_drive", "slot_number": 1, "slot_size": 1}
     ]
   },
 
@@ -77,25 +113,6 @@
     ]
   },
 
-  "Drake Corsair": {
-    "note": "scunpacked has slot_size=0 for the Corsair QD slot; correct size is S2 with Torrent default",
-    "modify_slots": [
-      {"slot_type": "quantum_drive", "slot_number": 1, "slot_size": 2, "default_component": "Torrent"}
-    ]
-  },
-
-  "RSI Perseus": {
-    "note": "scunpacked has slot_size=0 for all Perseus component slots; correct size is S3",
-    "modify_slots": [
-      {"slot_type": "power_plant",      "slot_number": 1, "slot_size": 3},
-      {"slot_type": "power_plant",      "slot_number": 2, "slot_size": 3},
-      {"slot_type": "cooler",           "slot_number": 1, "slot_size": 3},
-      {"slot_type": "cooler",           "slot_number": 2, "slot_size": 3},
-      {"slot_type": "shield_generator", "slot_number": 1, "slot_size": 3},
-      {"slot_type": "shield_generator", "slot_number": 2, "slot_size": 3}
-    ]
-  },
-
   "Crusader C2 Hercules Starlifter": {
     "note": "scunpacked includes a spurious empty S3 shield_generator slot#3; the C2 only has 2 usable shield slots in game",
     "delete_slots": [
@@ -116,6 +133,475 @@
       {"slot_type": "cooler",        "slot_size": 3, "default_component": "Blizzard"},
       {"slot_type": "cooler",        "slot_size": 3, "default_component": "Blizzard"},
       {"slot_type": "quantum_drive", "slot_size": 3, "default_component": "Kama"}
+    ]
+  },
+
+  "Aegis Hammerhead": {
+    "note": "scunpacked has slot_size=0 for the Hammerhead quantum drive; correct size is S3",
+    "modify_slots": [
+      {"slot_type": "quantum_drive", "slot_number": 1, "slot_size": 3}
+    ]
+  },
+
+  "Aegis Hammerhead 2949 Best In Show Edition": {
+    "note": "same QD slot_size=0 issue as base Hammerhead; correct size is S3",
+    "modify_slots": [
+      {"slot_type": "quantum_drive", "slot_number": 1, "slot_size": 3}
+    ]
+  },
+
+  "Anvil C8 Pisces": {
+    "note": "scunpacked has slot_size=0 for Pisces power plant and shield; correct size is S1",
+    "modify_slots": [
+      {"slot_type": "power_plant",      "slot_number": 1, "slot_size": 1},
+      {"slot_type": "shield_generator", "slot_number": 1, "slot_size": 1}
+    ]
+  },
+
+  "Anvil C8R Pisces Rescue": {
+    "note": "same slot_size=0 issue as base C8 Pisces; correct size is S1",
+    "modify_slots": [
+      {"slot_type": "power_plant",      "slot_number": 1, "slot_size": 1},
+      {"slot_type": "shield_generator", "slot_number": 1, "slot_size": 1}
+    ]
+  },
+
+  "Anvil C8X Pisces Expedition": {
+    "note": "same slot_size=0 issue as base C8 Pisces; correct size is S1",
+    "modify_slots": [
+      {"slot_type": "power_plant",      "slot_number": 1, "slot_size": 1},
+      {"slot_type": "shield_generator", "slot_number": 1, "slot_size": 1}
+    ]
+  },
+
+  "Anvil Terrapin": {
+    "note": "scunpacked has slot_size=0 for both Terrapin shield slots; correct size is S2",
+    "modify_slots": [
+      {"slot_type": "shield_generator", "slot_number": 1, "slot_size": 2},
+      {"slot_type": "shield_generator", "slot_number": 2, "slot_size": 2}
+    ]
+  },
+
+  "Anvil Terrapin Medic": {
+    "note": "same shield slot_size=0 issue as base Terrapin; correct size is S2",
+    "modify_slots": [
+      {"slot_type": "shield_generator", "slot_number": 1, "slot_size": 2},
+      {"slot_type": "shield_generator", "slot_number": 2, "slot_size": 2}
+    ]
+  },
+
+  "Anvil Terrapin Medic Wikelo Savior Special": {
+    "note": "same shield slot_size=0 issue as base Terrapin; correct size is S2",
+    "modify_slots": [
+      {"slot_type": "shield_generator", "slot_number": 1, "slot_size": 2},
+      {"slot_type": "shield_generator", "slot_number": 2, "slot_size": 2}
+    ]
+  },
+
+  "Aopoa San'tok.yāi": {
+    "note": "scunpacked has slot_size=0 for all San'tok.yāi component slots; coolers/PP/QD are S1, shield is S2",
+    "modify_slots": [
+      {"slot_type": "cooler",           "slot_number": 1, "slot_size": 1},
+      {"slot_type": "cooler",           "slot_number": 2, "slot_size": 1},
+      {"slot_type": "power_plant",      "slot_number": 1, "slot_size": 1},
+      {"slot_type": "power_plant",      "slot_number": 2, "slot_size": 1},
+      {"slot_type": "quantum_drive",    "slot_number": 1, "slot_size": 1},
+      {"slot_type": "shield_generator", "slot_number": 1, "slot_size": 2}
+    ]
+  },
+
+  "Corsair PYAM Exec": {
+    "note": "scunpacked has slot_size=0 for all Corsair PYAM Exec component slots; cooler/PP/QD are S2, shield is S3",
+    "modify_slots": [
+      {"slot_type": "cooler",           "slot_number": 1, "slot_size": 2},
+      {"slot_type": "cooler",           "slot_number": 2, "slot_size": 2},
+      {"slot_type": "power_plant",      "slot_number": 1, "slot_size": 2},
+      {"slot_type": "power_plant",      "slot_number": 2, "slot_size": 2},
+      {"slot_type": "quantum_drive",    "slot_number": 1, "slot_size": 2},
+      {"slot_type": "shield_generator", "slot_number": 1, "slot_size": 3}
+    ]
+  },
+
+  "Crusader Intrepid": {
+    "note": "scunpacked has slot_size=0 for all Intrepid component slots; correct size is S1",
+    "modify_slots": [
+      {"slot_type": "cooler",           "slot_number": 1, "slot_size": 1},
+      {"slot_type": "power_plant",      "slot_number": 1, "slot_size": 1},
+      {"slot_type": "quantum_drive",    "slot_number": 1, "slot_size": 1},
+      {"slot_type": "shield_generator", "slot_number": 1, "slot_size": 1}
+    ]
+  },
+
+  "Crusader Intrepid Wikelo Work Special": {
+    "note": "same slot_size=0 issue as base Intrepid; correct size is S1",
+    "modify_slots": [
+      {"slot_type": "cooler",           "slot_number": 1, "slot_size": 1},
+      {"slot_type": "power_plant",      "slot_number": 1, "slot_size": 1},
+      {"slot_type": "quantum_drive",    "slot_number": 1, "slot_size": 1},
+      {"slot_type": "shield_generator", "slot_number": 1, "slot_size": 1}
+    ]
+  },
+
+  "Drake Golem": {
+    "note": "scunpacked has slot_size=0 for all Golem component slots; correct size is S1",
+    "modify_slots": [
+      {"slot_type": "cooler",           "slot_number": 1, "slot_size": 1},
+      {"slot_type": "power_plant",      "slot_number": 1, "slot_size": 1},
+      {"slot_type": "quantum_drive",    "slot_number": 1, "slot_size": 1},
+      {"slot_type": "shield_generator", "slot_number": 1, "slot_size": 1}
+    ]
+  },
+
+  "Drake Golem OX": {
+    "note": "same slot_size=0 issue as base Golem; correct size is S1",
+    "modify_slots": [
+      {"slot_type": "cooler",           "slot_number": 1, "slot_size": 1},
+      {"slot_type": "power_plant",      "slot_number": 1, "slot_size": 1},
+      {"slot_type": "quantum_drive",    "slot_number": 1, "slot_size": 1},
+      {"slot_type": "shield_generator", "slot_number": 1, "slot_size": 1}
+    ]
+  },
+
+  "Drake Golem Teach's Special": {
+    "note": "same slot_size=0 issue as base Golem; correct size is S1",
+    "modify_slots": [
+      {"slot_type": "cooler",           "slot_number": 1, "slot_size": 1},
+      {"slot_type": "power_plant",      "slot_number": 1, "slot_size": 1},
+      {"slot_type": "quantum_drive",    "slot_number": 1, "slot_size": 1},
+      {"slot_type": "shield_generator", "slot_number": 1, "slot_size": 1}
+    ]
+  },
+
+  "Drake Golem Wikelo Work Special": {
+    "note": "same slot_size=0 issue as base Golem; correct size is S1",
+    "modify_slots": [
+      {"slot_type": "cooler",           "slot_number": 1, "slot_size": 1},
+      {"slot_type": "power_plant",      "slot_number": 1, "slot_size": 1},
+      {"slot_type": "quantum_drive",    "slot_number": 1, "slot_size": 1},
+      {"slot_type": "shield_generator", "slot_number": 1, "slot_size": 1}
+    ]
+  },
+
+  "Drake Vulture": {
+    "note": "scunpacked has slot_size=0 for all Vulture component slots; correct size is S1",
+    "modify_slots": [
+      {"slot_type": "cooler",           "slot_number": 1, "slot_size": 1},
+      {"slot_type": "cooler",           "slot_number": 2, "slot_size": 1},
+      {"slot_type": "power_plant",      "slot_number": 1, "slot_size": 1},
+      {"slot_type": "power_plant",      "slot_number": 2, "slot_size": 1},
+      {"slot_type": "quantum_drive",    "slot_number": 1, "slot_size": 1},
+      {"slot_type": "shield_generator", "slot_number": 1, "slot_size": 1},
+      {"slot_type": "shield_generator", "slot_number": 2, "slot_size": 1},
+      {"slot_type": "shield_generator", "slot_number": 3, "slot_size": 1}
+    ]
+  },
+
+  "Drake Vulture Teach's Special": {
+    "note": "same slot_size=0 issue as base Vulture; correct size is S1",
+    "modify_slots": [
+      {"slot_type": "cooler",           "slot_number": 1, "slot_size": 1},
+      {"slot_type": "cooler",           "slot_number": 2, "slot_size": 1},
+      {"slot_type": "power_plant",      "slot_number": 1, "slot_size": 1},
+      {"slot_type": "power_plant",      "slot_number": 2, "slot_size": 1},
+      {"slot_type": "quantum_drive",    "slot_number": 1, "slot_size": 1},
+      {"slot_type": "shield_generator", "slot_number": 1, "slot_size": 1},
+      {"slot_type": "shield_generator", "slot_number": 2, "slot_size": 1},
+      {"slot_type": "shield_generator", "slot_number": 3, "slot_size": 1}
+    ]
+  },
+
+  "Gatac Syulen": {
+    "note": "scunpacked has slot_size=0 for Syulen cooler, power plant, and both shield slots; correct size is S1",
+    "modify_slots": [
+      {"slot_type": "cooler",           "slot_number": 1, "slot_size": 1},
+      {"slot_type": "power_plant",      "slot_number": 1, "slot_size": 1},
+      {"slot_type": "shield_generator", "slot_number": 1, "slot_size": 1},
+      {"slot_type": "shield_generator", "slot_number": 2, "slot_size": 1}
+    ]
+  },
+
+  "Kruger L-21 Wolf": {
+    "note": "scunpacked has slot_size=0 for L-21 power plant, QD, and both shield slots; correct size is S1",
+    "modify_slots": [
+      {"slot_type": "power_plant",      "slot_number": 1, "slot_size": 1},
+      {"slot_type": "quantum_drive",    "slot_number": 1, "slot_size": 1},
+      {"slot_type": "shield_generator", "slot_number": 1, "slot_size": 1},
+      {"slot_type": "shield_generator", "slot_number": 2, "slot_size": 1}
+    ]
+  },
+
+  "Kruger L-21 Wolf Wikelo Sneak Special": {
+    "note": "same slot_size=0 issue as base L-21 Wolf; correct size is S1",
+    "modify_slots": [
+      {"slot_type": "power_plant",      "slot_number": 1, "slot_size": 1},
+      {"slot_type": "quantum_drive",    "slot_number": 1, "slot_size": 1},
+      {"slot_type": "shield_generator", "slot_number": 1, "slot_size": 1},
+      {"slot_type": "shield_generator", "slot_number": 2, "slot_size": 1}
+    ]
+  },
+
+  "Kruger L-21 Wolf Wikelo War Special": {
+    "note": "same slot_size=0 issue as base L-21 Wolf; correct size is S1",
+    "modify_slots": [
+      {"slot_type": "power_plant",      "slot_number": 1, "slot_size": 1},
+      {"slot_type": "quantum_drive",    "slot_number": 1, "slot_size": 1},
+      {"slot_type": "shield_generator", "slot_number": 1, "slot_size": 1},
+      {"slot_type": "shield_generator", "slot_number": 2, "slot_size": 1}
+    ]
+  },
+
+  "Mirai Fury": {
+    "note": "scunpacked has slot_size=0 for Fury coolers, power plant, and shield; correct size is S1",
+    "modify_slots": [
+      {"slot_type": "cooler",           "slot_number": 1, "slot_size": 1},
+      {"slot_type": "cooler",           "slot_number": 2, "slot_size": 1},
+      {"slot_type": "power_plant",      "slot_number": 1, "slot_size": 1},
+      {"slot_type": "shield_generator", "slot_number": 1, "slot_size": 1}
+    ]
+  },
+
+  "Mirai Fury LX": {
+    "note": "same slot_size=0 issue as base Fury; correct size is S1",
+    "modify_slots": [
+      {"slot_type": "cooler",           "slot_number": 1, "slot_size": 1},
+      {"slot_type": "cooler",           "slot_number": 2, "slot_size": 1},
+      {"slot_type": "power_plant",      "slot_number": 1, "slot_size": 1},
+      {"slot_type": "shield_generator", "slot_number": 1, "slot_size": 1}
+    ]
+  },
+
+  "Mirai Fury MX": {
+    "note": "same slot_size=0 issue as base Fury; correct size is S1",
+    "modify_slots": [
+      {"slot_type": "cooler",           "slot_number": 1, "slot_size": 1},
+      {"slot_type": "cooler",           "slot_number": 2, "slot_size": 1},
+      {"slot_type": "power_plant",      "slot_number": 1, "slot_size": 1},
+      {"slot_type": "shield_generator", "slot_number": 1, "slot_size": 1}
+    ]
+  },
+
+  "Mirai Guardian": {
+    "note": "scunpacked has slot_size=0 for Guardian cooler and shield (S2) and both power plants (S1)",
+    "modify_slots": [
+      {"slot_type": "cooler",           "slot_number": 1, "slot_size": 2},
+      {"slot_type": "power_plant",      "slot_number": 1, "slot_size": 1},
+      {"slot_type": "power_plant",      "slot_number": 2, "slot_size": 1},
+      {"slot_type": "shield_generator", "slot_number": 1, "slot_size": 2}
+    ]
+  },
+
+  "Mirai Guardian Wikelo War Special": {
+    "note": "same slot_size=0 issue as base Guardian; cooler and shield are S2, power plants are S1",
+    "modify_slots": [
+      {"slot_type": "cooler",           "slot_number": 1, "slot_size": 2},
+      {"slot_type": "power_plant",      "slot_number": 1, "slot_size": 1},
+      {"slot_type": "power_plant",      "slot_number": 2, "slot_size": 1},
+      {"slot_type": "shield_generator", "slot_number": 1, "slot_size": 2}
+    ]
+  },
+
+  "Mirai Guardian MX": {
+    "note": "scunpacked has slot_size=0 for Guardian MX; cooler #1 is S1, cooler #2 and PP and shield are S2",
+    "modify_slots": [
+      {"slot_type": "cooler",           "slot_number": 1, "slot_size": 1},
+      {"slot_type": "cooler",           "slot_number": 2, "slot_size": 2},
+      {"slot_type": "power_plant",      "slot_number": 1, "slot_size": 2},
+      {"slot_type": "shield_generator", "slot_number": 1, "slot_size": 2},
+      {"slot_type": "shield_generator", "slot_number": 2, "slot_size": 2}
+    ]
+  },
+
+  "Mirai Guardian MX Wikelo War Special": {
+    "note": "same slot_size=0 issue as base Guardian MX; cooler #1 is S1, cooler #2 and PP and shield are S2",
+    "modify_slots": [
+      {"slot_type": "cooler",           "slot_number": 1, "slot_size": 1},
+      {"slot_type": "cooler",           "slot_number": 2, "slot_size": 2},
+      {"slot_type": "power_plant",      "slot_number": 1, "slot_size": 2},
+      {"slot_type": "shield_generator", "slot_number": 1, "slot_size": 2},
+      {"slot_type": "shield_generator", "slot_number": 2, "slot_size": 2}
+    ]
+  },
+
+  "Mirai Guardian QI": {
+    "note": "scunpacked has slot_size=0 for Guardian QI; cooler and shield are S2, power plants are S1",
+    "modify_slots": [
+      {"slot_type": "cooler",           "slot_number": 1, "slot_size": 2},
+      {"slot_type": "power_plant",      "slot_number": 1, "slot_size": 1},
+      {"slot_type": "power_plant",      "slot_number": 2, "slot_size": 1},
+      {"slot_type": "shield_generator", "slot_number": 1, "slot_size": 2}
+    ]
+  },
+
+  "Mirai Guardian QI Wikelo Special": {
+    "note": "same slot_size=0 issue as base Guardian QI; cooler and shield are S2, power plants are S1",
+    "modify_slots": [
+      {"slot_type": "cooler",           "slot_number": 1, "slot_size": 2},
+      {"slot_type": "power_plant",      "slot_number": 1, "slot_size": 1},
+      {"slot_type": "power_plant",      "slot_number": 2, "slot_size": 1},
+      {"slot_type": "shield_generator", "slot_number": 1, "slot_size": 2}
+    ]
+  },
+
+  "RSI Apollo Medivac": {
+    "note": "scunpacked has slot_size=0 for all Apollo component slots; cooler/PP/QD/shield are S2. Shield slots 3,4,7,8 are phantom hardpoints not present in game — delete them.",
+    "modify_slots": [
+      {"slot_type": "cooler",           "slot_number": 1, "slot_size": 2},
+      {"slot_type": "cooler",           "slot_number": 2, "slot_size": 2},
+      {"slot_type": "power_plant",      "slot_number": 1, "slot_size": 2},
+      {"slot_type": "power_plant",      "slot_number": 2, "slot_size": 2},
+      {"slot_type": "quantum_drive",    "slot_number": 1, "slot_size": 2},
+      {"slot_type": "shield_generator", "slot_number": 1, "slot_size": 2},
+      {"slot_type": "shield_generator", "slot_number": 2, "slot_size": 2},
+      {"slot_type": "shield_generator", "slot_number": 5, "slot_size": 2},
+      {"slot_type": "shield_generator", "slot_number": 6, "slot_size": 2}
+    ],
+    "delete_slots": [
+      {"slot_type": "shield_generator", "slot_number": 3},
+      {"slot_type": "shield_generator", "slot_number": 4},
+      {"slot_type": "shield_generator", "slot_number": 7},
+      {"slot_type": "shield_generator", "slot_number": 8}
+    ]
+  },
+
+  "RSI Apollo Triage": {
+    "note": "same slot_size=0 and phantom shield slot issue as Apollo Medivac; correct sizes are S2, delete phantom shield slots 3,4,7,8",
+    "modify_slots": [
+      {"slot_type": "cooler",           "slot_number": 1, "slot_size": 2},
+      {"slot_type": "cooler",           "slot_number": 2, "slot_size": 2},
+      {"slot_type": "power_plant",      "slot_number": 1, "slot_size": 2},
+      {"slot_type": "power_plant",      "slot_number": 2, "slot_size": 2},
+      {"slot_type": "quantum_drive",    "slot_number": 1, "slot_size": 2},
+      {"slot_type": "shield_generator", "slot_number": 1, "slot_size": 2},
+      {"slot_type": "shield_generator", "slot_number": 2, "slot_size": 2},
+      {"slot_type": "shield_generator", "slot_number": 5, "slot_size": 2},
+      {"slot_type": "shield_generator", "slot_number": 6, "slot_size": 2}
+    ],
+    "delete_slots": [
+      {"slot_type": "shield_generator", "slot_number": 3},
+      {"slot_type": "shield_generator", "slot_number": 4},
+      {"slot_type": "shield_generator", "slot_number": 7},
+      {"slot_type": "shield_generator", "slot_number": 8}
+    ]
+  },
+
+  "RSI Aurora CL": {
+    "note": "scunpacked has slot_size=0 for the Aurora CL power plant; correct size is S1",
+    "modify_slots": [
+      {"slot_type": "power_plant", "slot_number": 1, "slot_size": 1}
+    ]
+  },
+
+  "RSI Aurora ES": {
+    "note": "scunpacked has slot_size=0 for the Aurora ES power plant; correct size is S1",
+    "modify_slots": [
+      {"slot_type": "power_plant", "slot_number": 1, "slot_size": 1}
+    ]
+  },
+
+  "RSI Aurora LN": {
+    "note": "scunpacked has slot_size=0 for the Aurora LN power plant; correct size is S1",
+    "modify_slots": [
+      {"slot_type": "power_plant", "slot_number": 1, "slot_size": 1}
+    ]
+  },
+
+  "RSI Aurora LX": {
+    "note": "scunpacked has slot_size=0 for the Aurora LX power plant; correct size is S1",
+    "modify_slots": [
+      {"slot_type": "power_plant", "slot_number": 1, "slot_size": 1}
+    ]
+  },
+
+  "RSI Aurora MR": {
+    "note": "scunpacked has slot_size=0 for the Aurora MR power plant; correct size is S1",
+    "modify_slots": [
+      {"slot_type": "power_plant", "slot_number": 1, "slot_size": 1}
+    ]
+  },
+
+  "RSI Hermes": {
+    "note": "scunpacked has slot_size=0 for all Hermes component slots (S2) and includes 4 phantom shield slots; real shield slots are #3,4,7,8 — delete phantom slots #1,2,5,6",
+    "modify_slots": [
+      {"slot_type": "cooler",           "slot_number": 1, "slot_size": 2},
+      {"slot_type": "cooler",           "slot_number": 2, "slot_size": 2},
+      {"slot_type": "power_plant",      "slot_number": 1, "slot_size": 2},
+      {"slot_type": "power_plant",      "slot_number": 2, "slot_size": 2},
+      {"slot_type": "quantum_drive",    "slot_number": 1, "slot_size": 2},
+      {"slot_type": "shield_generator", "slot_number": 3, "slot_size": 2},
+      {"slot_type": "shield_generator", "slot_number": 4, "slot_size": 2},
+      {"slot_type": "shield_generator", "slot_number": 7, "slot_size": 2},
+      {"slot_type": "shield_generator", "slot_number": 8, "slot_size": 2}
+    ],
+    "delete_slots": [
+      {"slot_type": "shield_generator", "slot_number": 1},
+      {"slot_type": "shield_generator", "slot_number": 2},
+      {"slot_type": "shield_generator", "slot_number": 5},
+      {"slot_type": "shield_generator", "slot_number": 6}
+    ]
+  },
+
+  "RSI Salvation": {
+    "note": "scunpacked has slot_size=0 for all Salvation component slots; correct size is S1",
+    "modify_slots": [
+      {"slot_type": "cooler",           "slot_number": 1, "slot_size": 1},
+      {"slot_type": "power_plant",      "slot_number": 1, "slot_size": 1},
+      {"slot_type": "quantum_drive",    "slot_number": 1, "slot_size": 1},
+      {"slot_type": "shield_generator", "slot_number": 1, "slot_size": 1},
+      {"slot_type": "shield_generator", "slot_number": 2, "slot_size": 1}
+    ]
+  },
+
+  "RSI Zeus Mk II CL": {
+    "note": "scunpacked has slot_size=0 for Zeus CL coolers, power plants, and shields; shield slot #1 is phantom — delete it, fix #2-4 to S2",
+    "modify_slots": [
+      {"slot_type": "cooler",           "slot_number": 1, "slot_size": 2},
+      {"slot_type": "cooler",           "slot_number": 2, "slot_size": 2},
+      {"slot_type": "power_plant",      "slot_number": 1, "slot_size": 2},
+      {"slot_type": "power_plant",      "slot_number": 2, "slot_size": 2},
+      {"slot_type": "shield_generator", "slot_number": 2, "slot_size": 2},
+      {"slot_type": "shield_generator", "slot_number": 3, "slot_size": 2},
+      {"slot_type": "shield_generator", "slot_number": 4, "slot_size": 2}
+    ],
+    "delete_slots": [
+      {"slot_type": "shield_generator", "slot_number": 1}
+    ]
+  },
+
+  "RSI Zeus Mk II ES": {
+    "note": "scunpacked has slot_size=0 for all Zeus ES component slots; correct size is S2",
+    "modify_slots": [
+      {"slot_type": "cooler",           "slot_number": 1, "slot_size": 2},
+      {"slot_type": "cooler",           "slot_number": 2, "slot_size": 2},
+      {"slot_type": "power_plant",      "slot_number": 1, "slot_size": 2},
+      {"slot_type": "power_plant",      "slot_number": 2, "slot_size": 2},
+      {"slot_type": "shield_generator", "slot_number": 1, "slot_size": 2},
+      {"slot_type": "shield_generator", "slot_number": 2, "slot_size": 2},
+      {"slot_type": "shield_generator", "slot_number": 3, "slot_size": 2},
+      {"slot_type": "shield_generator", "slot_number": 4, "slot_size": 2}
+    ]
+  },
+
+  "RSI Zeus Mk II ES Wikelo Work Special": {
+    "note": "same slot_size=0 issue as base Zeus Mk II ES; correct size is S2",
+    "modify_slots": [
+      {"slot_type": "cooler",           "slot_number": 1, "slot_size": 2},
+      {"slot_type": "cooler",           "slot_number": 2, "slot_size": 2},
+      {"slot_type": "power_plant",      "slot_number": 1, "slot_size": 2},
+      {"slot_type": "power_plant",      "slot_number": 2, "slot_size": 2},
+      {"slot_type": "shield_generator", "slot_number": 1, "slot_size": 2},
+      {"slot_type": "shield_generator", "slot_number": 2, "slot_size": 2},
+      {"slot_type": "shield_generator", "slot_number": 3, "slot_size": 2},
+      {"slot_type": "shield_generator", "slot_number": 4, "slot_size": 2}
+    ]
+  },
+
+  "Syulen PYAM Exec": {
+    "note": "scunpacked has slot_size=0 for all Syulen PYAM Exec component slots; correct size is S1",
+    "modify_slots": [
+      {"slot_type": "cooler",           "slot_number": 1, "slot_size": 1},
+      {"slot_type": "power_plant",      "slot_number": 1, "slot_size": 1},
+      {"slot_type": "shield_generator", "slot_number": 1, "slot_size": 1},
+      {"slot_type": "shield_generator", "slot_number": 2, "slot_size": 1}
     ]
   }
 }
