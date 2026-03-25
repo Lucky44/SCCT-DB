@@ -358,7 +358,7 @@ def do_import(ships_path, items_path, log=print):
             continue
 
         name = clean_name(item.get("name"))
-        if not name:
+        if not name or name.lower() == itype.lower():
             continue
 
         desc = get_desc_data(item)
