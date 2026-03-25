@@ -179,6 +179,17 @@ const STAT_ROWS = {
     ['Power Pips (max)', c => fmt(c.stats?.power_pips_max)],
     ['Health',           c => fmt(c.stats?.health)],
   ],
+  radar: [
+    ['Grade',            c => c.grade || '—'],
+    ['Class',            c => c.class || '—'],
+    ['Manufacturer',     c => c.manufacturer || '—'],
+    ['IR Sensitivity',   c => fmt(c.stats?.sensitivity_ir)],
+    ['EM Sensitivity',   c => fmt(c.stats?.sensitivity_em)],
+    ['CS Sensitivity',   c => fmt(c.stats?.sensitivity_cs)],
+    ['RS Sensitivity',   c => fmt(c.stats?.sensitivity_rs)],
+    ['Cooldown',         c => c.stats?.cooldown != null ? `${c.stats.cooldown}s` : '—'],
+    ['Health',           c => fmt(c.stats?.health)],
+  ],
 };
 
 const DEFAULT_ROWS = [

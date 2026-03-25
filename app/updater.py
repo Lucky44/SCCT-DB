@@ -135,19 +135,49 @@ def download_update(download_url: str) -> dict:
         return {"ok": False, "error": "Auto-download only works in the packaged exe."}
 
     dest = os.path.join(exe_dir, UPDATE_EXE)
+    tmp_dest = dest + ".tmp"
     try:
         req = urllib.request.Request(
             download_url,
             headers={"User-Agent": "SCCT-UpdateChecker/1.0"},
         )
-        with urllib.request.urlopen(req, timeout=120) as resp, open(dest, "wb") as f:
-            while True:
-                chunk = resp.read(65536)
-                if not chunk:
-                    break
-                f.write(chunk)
+        with urllib.request.urlopen(req, timeout=120) as resp:
+            status = resp.getcode()
+            if status != 200:
+                return {"ok": False, "error": f"HTTP {status} from download URL."}
+
+            content_length = resp.headers.get("Content-Length")
+            expected_bytes = int(content_length) if content_length else None
+
+            with open(tmp_dest, "wb") as f:
+                downloaded = 0
+                while True:
+                    chunk = resp.read(65536)
+                    if not chunk:
+                        break
+                    f.write(chunk)
+                    downloaded += len(chunk)
+
+        # Verify size if server provided Content-Length
+        if expected_bytes and downloaded != expected_bytes:
+            os.remove(tmp_dest)
+            return {"ok": False, "error": f"Download incomplete: got {downloaded} of {expected_bytes} bytes."}
+
+        # Verify PE magic bytes (MZ header) — catches HTML error pages saved as .exe
+        with open(tmp_dest, "rb") as f:
+            magic = f.read(2)
+        if magic != b"MZ":
+            os.remove(tmp_dest)
+            return {"ok": False, "error": "Downloaded file is not a valid executable (bad magic bytes)."}
+
+        # Atomically replace any previous update file
+        if os.path.exists(dest):
+            os.remove(dest)
+        os.rename(tmp_dest, dest)
         return {"ok": True}
     except Exception as exc:
+        if os.path.exists(tmp_dest):
+            os.remove(tmp_dest)
         return {"ok": False, "error": str(exc)}
 
 
