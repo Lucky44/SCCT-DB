@@ -88,7 +88,7 @@ jobs:
           if ($parts.Count -lt 3) { $parts += "0" }
           $parts[2] = [string]([int]$parts[2] + 1)
           $new_ver = $parts -join '.'
-          Set-Content data/version.txt "$new_ver`n"
+          Set-Content data/version.txt $new_ver
 
           $tag = "v$new_ver"
           echo "new_version=$new_ver" >> $env:GITHUB_OUTPUT
