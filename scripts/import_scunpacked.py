@@ -701,6 +701,18 @@ def do_import(ships_path, items_path, log=print):
                 ).first()
                 if target:
                     db.session.delete(target)
+            # -- Re-index slot numbers sequentially to remove gaps --
+            ship_slots = (
+                db.session.query(ShipDefaultLoadout)
+                .filter_by(ship_id=ship.id)
+                .order_by(ShipDefaultLoadout.slot_type, ShipDefaultLoadout.mount_group, ShipDefaultLoadout.slot_number)
+                .all()
+            )
+            type_counters = {}
+            for slot in ship_slots:
+                stype = slot.slot_type
+                type_counters[stype] = type_counters.get(stype, 0) + 1
+                slot.slot_number = type_counters[stype]
 
     db.session.commit()
     log(f"  → {ship_count} ships, {slot_count} loadout slots")
