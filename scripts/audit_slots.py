@@ -83,19 +83,19 @@ def run_audit(ship_filter=None):
                 label = f"{stype} slot#{slot.slot_number}"
 
                 # Check 1: slot_size=0 or None
-                if not slot.slot_size:
+                if slot.slot_size is None:
                     issues.append((ship.name, label, slot,
                         f"slot_size={slot.slot_size!r} — picker will show all sizes"))
 
                 # Check 2: default component size mismatch
-                if slot.default_component_id and slot.slot_size:
+                if slot.default_component_id and slot.slot_size is not None:
                     comp = db.session.get(Component, slot.default_component_id)
                     if comp and comp.size != slot.slot_size:
                         issues.append((ship.name, label, slot,
                             f"default component '{comp.name}' is S{comp.size} but slot is S{slot.slot_size}"))
 
                 # Check 6: no default component
-                if slot.slot_size and not slot.default_component_id:
+                if slot.slot_size is not None and not slot.default_component_id:
                     issues.append((ship.name, label, slot,
                         "no default component — slot will be EMPTY after add-to-fleet"))
 
