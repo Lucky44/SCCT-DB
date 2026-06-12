@@ -223,8 +223,15 @@ def get_manufacturer(item):
 
 
 def slot_types_from_entry(entry):
-    """Return the list of type strings from a loadout entry's ItemTypes."""
-    return [it.get("Type", "") for it in entry.get("ItemTypes", [])]
+    """Return the list of type strings from a loadout entry's ItemTypes or CompatibleTypes."""
+    if "CompatibleTypes" in entry:
+        return [it.get("Type", "") for it in entry.get("CompatibleTypes", [])]
+    if "ItemTypes" in entry:
+        return [it.get("Type", "") for it in entry.get("ItemTypes", [])]
+    t = entry.get("Type")
+    if t:
+        return [t.split(".", 1)[0]]
+    return []
 
 
 POSITION_WORDS = {
