@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# Usage: bump data/version.txt, then run: bash scripts/release.sh
+# Usage:
+#   bash scripts/release.sh 0.75.43   # set the new version, then release
+#   bash scripts/release.sh           # release whatever is in data/version.txt
 #
 # This script does NOT build the exe locally. It commits the version bump,
 # pushes main, and pushes a version tag. The tag push triggers
@@ -17,9 +19,32 @@ REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_DIR"
 GH="/c/Program Files/GitHub CLI/gh.exe"
 
-VERSION=$(tr -d '[:space:]' < "${REPO_DIR}/data/version.txt")
+# Determine the version to release. Optional first arg sets a new version
+# (e.g. `release.sh 0.75.43`); with no arg we release whatever data/version.txt
+# already holds. We only validate here — the file is written later, after the
+# safety checks pass, so a failed guard never leaves a half-bumped file.
+CURRENT=$(tr -d '[:space:]' < "${REPO_DIR}/data/version.txt")
+ARG_VERSION="${1:-}"
+ARG_VERSION="${ARG_VERSION#v}"   # tolerate a leading "v" (v0.75.43 → 0.75.43)
+
+if [ -n "$ARG_VERSION" ]; then
+  if ! printf '%s' "$ARG_VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+    echo "ERROR: version '$ARG_VERSION' is not MAJOR.MINOR.PATCH (e.g. 0.75.43)." >&2
+    exit 1
+  fi
+  HIGHEST=$(printf '%s\n%s\n' "$CURRENT" "$ARG_VERSION" | sort -V | tail -n1)
+  if [ "$ARG_VERSION" = "$CURRENT" ] || [ "$HIGHEST" != "$ARG_VERSION" ]; then
+    echo "ERROR: new version '$ARG_VERSION' must be higher than current '$CURRENT'." >&2
+    exit 1
+  fi
+  VERSION="$ARG_VERSION"
+  echo "==> New version: ${CURRENT} -> ${VERSION}"
+else
+  VERSION="$CURRENT"
+fi
+
 if [ -z "$VERSION" ]; then
-  echo "ERROR: Could not read version from data/version.txt" >&2
+  echo "ERROR: Could not determine a version to release." >&2
   exit 1
 fi
 TAG="v${VERSION}"
@@ -57,7 +82,9 @@ if git ls-remote --exit-code --tags origin "${TAG}" >/dev/null 2>&1; then
 fi
 
 # --- Sync + commit the version bump --------------------------------------
-# Keep the dev-mode root version.txt in step with the packaged data/version.txt.
+# Write the chosen version to both files: data/version.txt is what the packaged
+# exe reads; root version.txt is for dev mode. (No-op if already up to date.)
+printf '%s\n' "$VERSION" > "${REPO_DIR}/data/version.txt"
 printf '%s\n' "$VERSION" > "${REPO_DIR}/version.txt"
 
 if ! git diff --quiet -- data/version.txt version.txt; then
