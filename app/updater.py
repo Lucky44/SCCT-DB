@@ -32,7 +32,7 @@ def _version_file_path() -> str:
     if getattr(sys, "frozen", False):
         return os.path.join(sys._MEIPASS, "data", "version.txt")
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    return os.path.join(root, "version.txt")
+    return os.path.join(root, "data", "version.txt")
 
 
 def get_current_version() -> str:
